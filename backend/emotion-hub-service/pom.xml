@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+         http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.seu.emotionhub</groupId>
+        <artifactId>emotion-hub-parent</artifactId>
+        <version>1.0.0</version>
+    </parent>
+
+    <artifactId>emotion-hub-service</artifactId>
+    <name>EmotionHub Service</name>
+    <description>业务逻辑层 - Service接口和实现</description>
+
+    <dependencies>
+        <!-- 依赖common模块 -->
+        <dependency>
+            <groupId>com.seu.emotionhub</groupId>
+            <artifactId>emotion-hub-common</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <!-- 依赖dao模块 -->
+        <dependency>
+            <groupId>com.seu.emotionhub</groupId>
+            <artifactId>emotion-hub-dao</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <!-- Spring Boot Starter -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter</artifactId>
+        </dependency>
+
+        <!-- Redis -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-redis</artifactId>
+        </dependency>
+    </dependencies>
+</project>

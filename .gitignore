@@ -1,0 +1,33 @@
+# Markdown files
+*.md
+
+# Kiro directory
+.kiro/
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# Maven
+target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+
+# Node
+node_modules/
+dist/
+.DS_Store
+*.log
+npm-debug.log*
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# OS
+Thumbs.db

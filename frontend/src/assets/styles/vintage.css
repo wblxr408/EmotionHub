@@ -1,0 +1,252 @@
+/* ===================================
+   EmotionHub - 复古学院派设计系统
+   Mid-Century Academic Aesthetic
+   =================================== */
+
+/* 1. CSS变量定义 */
+:root {
+  /* 主色调 */
+  --color-parchment: #DAD3B6;      /* 羊皮纸背景 */
+  --color-burgundy: #5C0120;       /* 深勃艮第红 */
+  --color-charcoal: #2F2F2F;       /* 炭灰色文字 */
+  --color-sand: #8C8471;           /* 暗沙色边框 */
+
+  /* 字体家族 */
+  --font-serif: 'Playfair Display', 'Noto Serif SC', serif;
+  --font-body: 'Lora', 'Noto Serif SC', serif;
+
+  /* 间距 */
+  --spacing-xs: 0.5rem;
+  --spacing-sm: 1rem;
+  --spacing-md: 2rem;
+  --spacing-lg: 3rem;
+  --spacing-xl: 4rem;
+
+  /* 边框 */
+  --border-thin: 1px solid var(--color-sand);
+  --border-accent: 2px solid var(--color-burgundy);
+
+  /* 过渡 */
+  --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 2. 全局重置 */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 16px;
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-body);
+  background-color: var(--color-parchment);
+  color: var(--color-charcoal);
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* 3. 排版系统 */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-serif);
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  color: var(--color-burgundy);
+  margin-bottom: var(--spacing-sm);
+}
+
+h1 {
+  font-size: 2.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+h2 {
+  font-size: 2rem;
+  letter-spacing: 0.08em;
+}
+
+h3 {
+  font-size: 1.5rem;
+}
+
+p {
+  margin-bottom: var(--spacing-sm);
+  line-height: 1.8;
+}
+
+/* 引用样式 */
+blockquote {
+  font-style: italic;
+  color: var(--color-burgundy);
+  border-left: var(--border-accent);
+  padding-left: var(--spacing-md);
+  margin: var(--spacing-md) 0;
+}
+
+/* 4. 按钮系统 */
+.btn {
+  font-family: var(--font-serif);
+  font-size: 0.95rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 0.75rem 2rem;
+  border: var(--border-thin);
+  background-color: transparent;
+  color: var(--color-burgundy);
+  cursor: pointer;
+  transition: var(--transition-smooth);
+  position: relative;
+  overflow: hidden;
+}
+
+.btn:hover {
+  background-color: var(--color-burgundy);
+  color: var(--color-parchment);
+  border-color: var(--color-burgundy);
+}
+
+.btn-primary {
+  background-color: var(--color-burgundy);
+  color: var(--color-parchment);
+  border-color: var(--color-burgundy);
+}
+
+.btn-primary:hover {
+  background-color: transparent;
+  color: var(--color-burgundy);
+}
+
+/* 5. 输入框系统 */
+input, textarea {
+  font-family: var(--font-body);
+  font-size: 1rem;
+  padding: 0.75rem 1rem;
+  border: var(--border-thin);
+  background-color: rgba(255, 255, 255, 0.3);
+  color: var(--color-charcoal);
+  transition: var(--transition-smooth);
+  width: 100%;
+}
+
+input:focus, textarea:focus {
+  outline: none;
+  border-color: var(--color-burgundy);
+  background-color: rgba(255, 255, 255, 0.5);
+}
+
+/* 6. 卡片系统 */
+.card {
+  background-color: rgba(255, 255, 255, 0.4);
+  border: var(--border-thin);
+  padding: var(--spacing-md);
+  margin-bottom: var(--spacing-md);
+  transition: var(--transition-smooth);
+}
+
+.card:hover {
+  box-shadow: 0 4px 12px rgba(92, 1, 32, 0.1);
+  transform: translateY(-2px);
+}
+
+/* 7. 分割线 */
+.divider {
+  height: 1px;
+  background-color: var(--color-sand);
+  margin: var(--spacing-md) 0;
+  position: relative;
+}
+
+.divider::before {
+  content: '◆';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  background-color: var(--color-parchment);
+  padding: 0 var(--spacing-sm);
+  color: var(--color-burgundy);
+  font-size: 0.8rem;
+}
+
+/* 8. 加载动画 - 打字机光标 */
+.loading-cursor {
+  display: inline-block;
+  width: 2px;
+  height: 1.2em;
+  background-color: var(--color-burgundy);
+  animation: blink 1s step-end infinite;
+  margin-left: 4px;
+}
+
+@keyframes blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+
+/* 9. 加载动画 - 延长红线 */
+.loading-line {
+  width: 0;
+  height: 2px;
+  background-color: var(--color-burgundy);
+  animation: extend 2s ease-in-out infinite;
+}
+
+@keyframes extend {
+  0% { width: 0; }
+  50% { width: 100%; }
+  100% { width: 0; }
+}
+
+/* 10. 页面过渡 */
+.fade-enter-active, .fade-leave-active {
+  transition: opacity 0.5s ease;
+}
+
+.fade-enter-from, .fade-leave-to {
+  opacity: 0;
+}
+
+/* 11. 滚动条样式 */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-parchment);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-sand);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-burgundy);
+}
+
+/* 12. 选中文本样式 */
+::selection {
+  background-color: var(--color-burgundy);
+  color: var(--color-parchment);
+}
+
+/* 13. 响应式断点 */
+@media (max-width: 768px) {
+  html {
+    font-size: 14px;
+  }
+
+  h1 {
+    font-size: 2rem;
+  }
+
+  h2 {
+    font-size: 1.5rem;
+  }
+}

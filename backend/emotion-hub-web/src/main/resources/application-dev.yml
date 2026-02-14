@@ -1,0 +1,170 @@
+# EmotionHub 后端配置文件 - 开发环境
+# Spring Boot 3.2+ 配置
+
+spring:
+  application:
+    name: emotion-hub
+
+  # 数据源配置
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/emotion_hub?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+    username: root
+    password: your_password_here
+    # Hikari连接池配置
+    hikari:
+      minimum-idle: 5
+      maximum-pool-size: 20
+      idle-timeout: 300000
+      connection-timeout: 20000
+      max-lifetime: 1200000
+
+  # Redis配置
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      password:
+      database: 0
+      timeout: 5000ms
+      lettuce:
+        pool:
+          max-active: 20
+          max-idle: 10
+          min-idle: 5
+          max-wait: 2000ms
+
+  # 文件上传配置
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 10MB
+      max-request-size: 50MB
+
+  # Jackson配置
+  jackson:
+    time-zone: GMT+8
+    date-format: yyyy-MM-dd HH:mm:ss
+    serialization:
+      write-dates-as-timestamps: false
+    default-property-inclusion: non_null
+
+# MyBatis-Plus配置
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  global-config:
+    db-config:
+      id-type: auto
+      logic-delete-field: deleted
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+  mapper-locations: classpath*:/mapper/**/*.xml
+
+# JWT配置
+jwt:
+  secret: EmotionHub_Secret_Key_2024_Change_This_In_Production
+  expiration: 604800000  # 7天（毫秒）
+  header: Authorization
+  prefix: Bearer
+
+# LLM配置
+llm:
+  # OpenAI配置
+  openai:
+    enabled: true
+    api-key: your_openai_api_key_here
+    api-url: https://api.openai.com/v1/chat/completions
+    model: gpt-3.5-turbo
+    timeout: 30000
+
+  # 通义千问配置
+  qianwen:
+    enabled: true
+    api-key: your_qianwen_api_key_here
+    api-url: https://dashscope.aliyuncs.com/api/v1/services/aigc/text-generation/generation
+    model: qwen-turbo
+    timeout: 30000
+
+  # 文心一言配置
+  wenxin:
+    enabled: false
+    api-key: your_wenxin_api_key_here
+    secret-key: your_wenxin_secret_key_here
+    api-url: https://aip.baidubce.com/rpc/2.0/ai_custom/v1/wenxinworkshop/chat/completions
+    timeout: 30000
+
+  # 智谱AI配置
+  zhipu:
+    enabled: false
+    api-key: your_zhipu_api_key_here
+    api-url: https://open.bigmodel.cn/api/paas/v4/chat/completions
+    model: glm-4
+    timeout: 30000
+
+  # 调度策略配置
+  scheduler:
+    strategy: round-robin  # 负载均衡策略: round-robin/random/weighted
+    enable-fallback: true  # 启用降级策略
+    max-retries: 2         # 最大重试次数
+    cache-enabled: true    # 启用缓存
+    cache-ttl: 86400       # 缓存过期时间（秒）24小时
+    rate-limit: 100        # 每分钟最大请求数
+
+# 异步线程池配置
+async:
+  executor:
+    core-pool-size: 5
+    max-pool-size: 20
+    queue-capacity: 100
+    thread-name-prefix: emotion-async-
+    keep-alive-seconds: 60
+
+# 定时任务配置
+schedule:
+  emotion-stats:
+    cron: 0 0 1 * * ?  # 每天凌晨1点执行情感统计
+
+# 日志配置
+logging:
+  level:
+    root: INFO
+    com.emotionhub: DEBUG
+    org.springframework.web: DEBUG
+    org.mybatis: DEBUG
+  pattern:
+    console: '%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{50} - %msg%n'
+  file:
+    name: logs/emotion-hub.log
+    max-size: 10MB
+    max-history: 30
+
+# 服务器配置
+server:
+  port: 8080
+  servlet:
+    context-path: /api
+  compression:
+    enabled: true
+    mime-types: application/json,application/xml,text/html,text/xml,text/plain
+
+# Actuator监控配置
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: when-authorized
+
+# Swagger/Knife4j配置
+knife4j:
+  enable: true
+  setting:
+    language: zh_cn
+  basic:
+    enable: false
+    username: admin
+    password: admin123
