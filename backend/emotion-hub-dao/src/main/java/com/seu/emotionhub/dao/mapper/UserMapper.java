@@ -16,7 +16,7 @@ import org.apache.ibatis.annotations.Mapper;
  * - selectList(Wrapper): 条件查询
  * 等等...
  */
-@Mapper
+
 public interface UserMapper extends BaseMapper<User> {
     // 基础的CRUD方法已经由BaseMapper提供
     // 如果需要自定义SQL，可以在这里添加方法

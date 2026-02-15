@@ -23,6 +23,12 @@
             <artifactId>emotion-hub-service</artifactId>
             <version>${project.version}</version>
         </dependency>
+<!--        依赖common模块-->
+        <dependency>
+            <groupId>com.seu.emotionhub</groupId>
+            <artifactId>emotion-hub-common</artifactId>
+            <version>${project.version}</version>
+        </dependency>
 
         <!-- Spring Boot Web -->
         <dependency>
@@ -35,7 +41,15 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-security</artifactId>
         </dependency>
-
+        <dependency>
+            <groupId>com.baomidou</groupId>
+            <artifactId>mybatis-plus-boot-starter</artifactId>
+<!--            <version>3.5.5</version>-->
+        </dependency>
+        <dependency>
+            <groupId>com.baomidou</groupId>
+            <artifactId>mybatis-plus-boot-starter</artifactId>
+        </dependency>
         <!-- WebSocket -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

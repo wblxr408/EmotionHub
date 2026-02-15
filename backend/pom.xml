@@ -69,6 +69,23 @@
                 <version>${mybatis-plus.version}</version>
             </dependency>
 
+                    <!-- 强制升级 mybatis-spring -->
+                    <dependency>
+                        <groupId>org.mybatis</groupId>
+                        <artifactId>mybatis-spring</artifactId>
+                        <version>3.0.3</version>
+                    </dependency>
+
+            <dependency>
+                <groupId>com.baomidou</groupId>
+                <artifactId>mybatis-plus-annotation</artifactId>
+                <version>${mybatis-plus.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.baomidou</groupId>
+                <artifactId>mybatis-plus-core</artifactId>
+                <version>${mybatis-plus.version}</version>
+            </dependency>
             <!-- MySQL驱动 -->
             <dependency>
                 <groupId>com.mysql</groupId>
