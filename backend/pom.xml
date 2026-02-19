@@ -21,6 +21,7 @@
         <module>emotion-hub-dao</module>
         <module>emotion-hub-service</module>
         <module>emotion-hub-web</module>
+        <module>emotion-hub-migration</module>
     </modules>
 
     <!-- 统一管理版本号 -->
@@ -48,6 +49,10 @@
 
         <!-- API文档 -->
         <knife4j.version>4.4.0</knife4j.version>
+
+        <!-- Flyway -->
+        <flyway.version>9.22.3</flyway.version>
+
     </properties>
 
     <!-- 依赖管理：统一版本，子模块继承时不需要写版本号 -->
@@ -144,6 +149,21 @@
                 <artifactId>knife4j-openapi3-jakarta-spring-boot-starter</artifactId>
                 <version>${knife4j.version}</version>
             </dependency>
+
+
+            <!-- Flyway -->
+            <dependency>
+                <groupId>org.flywaydb</groupId>
+                <artifactId>flyway-core</artifactId>
+                <version>${flyway.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.flywaydb</groupId>
+                <artifactId>flyway-mysql</artifactId>
+                <version>${flyway.version}</version>
+            </dependency>
+
         </dependencies>
     </dependencyManagement>
 

@@ -17,6 +17,9 @@ pom.xml.versionsBackup
 pom.xml.next
 release.properties
 
+#log files
+logs/
+
 # Node
 node_modules/
 dist/

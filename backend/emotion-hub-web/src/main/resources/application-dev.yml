@@ -4,13 +4,19 @@
 spring:
   application:
     name: emotion-hub
-
+  flyway:
+    locations:
+      - classpath:db/migration
+      - classpath:db/test
   # 数据源配置
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://localhost:3306/emotion_hub?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
-    username: root
-    password: your_password_here
+    # 注意：本地开发需要在环境变量中配置以下值：
+    #   EMOTIONHUB_DB_USERNAME_DEV - 数据库用户名
+    #   EMOTIONHUB_DB_PASSWORD_DEV - 数据库密码
+    username: ${EMOTIONHUB_DB_USERNAME_DEV}
+    password: ${EMOTIONHUB_DB_PASSWORD_DEV}
     # Hikari连接池配置
     hikari:
       minimum-idle: 5
