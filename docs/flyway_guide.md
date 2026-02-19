@@ -77,7 +77,7 @@ INSERT INTO users (username, email) VALUES
 
 Flyway 会检查哪些迁移脚本尚未执行，并按版本顺序执行这些脚本。在命令行中，运行以下命令来应用所有迁移：
 ``` shell
-flyway migrate
+mvn flyway:migrate
 ```
 本项目中已经配置了项目运行时自动迁移，不需要在项目运行前手动运行migrate命令。
 ### 使用 clean 命令
@@ -85,7 +85,7 @@ flyway migrate
 在开发过程中，clean 命令可以帮助你重置数据库，删除所有现有的数据库对象并重新应用所有迁移脚本。使用此命令时，请确保不会丢失生产数据！
 
 ```shell
-flyway clean
+mvn flyway:clean
 ```
 >[!WARNING]
 >

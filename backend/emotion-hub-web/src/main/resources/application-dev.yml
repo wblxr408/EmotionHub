@@ -8,6 +8,7 @@ spring:
     locations:
       - classpath:db/migration
       - classpath:db/test
+    clean-disabled: false
   # 数据源配置
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver

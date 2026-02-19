@@ -1,8 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
-         http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <!-- 父项目信息 -->
@@ -53,6 +52,15 @@
         <!-- Flyway -->
         <flyway.version>9.22.3</flyway.version>
 
+        <!-- DataSource for Flyway and Spring Boot (can be overridden with -D) -->
+        <spring.datasource.url>
+            jdbc:mysql://localhost:3306/emotion_hub?useUnicode=true&amp;characterEncoding=utf8&amp;useSSL=false&amp;serverTimezone=Asia/Shanghai&amp;allowPublicKeyRetrieval=true</spring.datasource.url>
+        <spring.datasource.username>root</spring.datasource.username>
+        <spring.datasource.password>060506</spring.datasource.password>
+        <spring.datasource.driver-class-name>com.mysql.cj.jdbc.Driver</spring.datasource.driver-class-name>
+        <!-- Flyway locations shared property so plugin and app can use same value -->
+        <spring.flyway.locations>
+            filesystem:${project.basedir}/emotion-hub-migration/src/main/resources/db/migration</spring.flyway.locations>
     </properties>
 
     <!-- 依赖管理：统一版本，子模块继承时不需要写版本号 -->
@@ -74,12 +82,12 @@
                 <version>${mybatis-plus.version}</version>
             </dependency>
 
-                    <!-- 强制升级 mybatis-spring -->
-                    <dependency>
-                        <groupId>org.mybatis</groupId>
-                        <artifactId>mybatis-spring</artifactId>
-                        <version>3.0.3</version>
-                    </dependency>
+            <!-- 强制升级 mybatis-spring -->
+            <dependency>
+                <groupId>org.mybatis</groupId>
+                <artifactId>mybatis-spring</artifactId>
+                <version>3.0.3</version>
+            </dependency>
 
             <dependency>
                 <groupId>com.baomidou</groupId>
@@ -179,6 +187,33 @@
                     <target>${java.version}</target>
                     <encoding>${project.build.sourceEncoding}</encoding>
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.flywaydb</groupId>
+                <artifactId>flyway-maven-plugin</artifactId>
+                <version>${flyway.version}</version> <!-- Or the latest version -->
+                <configuration>
+                    <url>${spring.datasource.url}</url>
+                    <user>${spring.datasource.username}</user>
+                    <password>${spring.datasource.password}</password>
+                    <driver>${spring.datasource.driver-class-name}</driver>
+                    <locations>
+                        <location>${spring.flyway.locations}</location>
+                    </locations>
+                    <cleanDisabled>false</cleanDisabled>
+                </configuration>
+                <dependencies>
+                    <dependency>
+                        <groupId>com.mysql</groupId>
+                        <artifactId>mysql-connector-j</artifactId>
+                        <version>${mysql.version}</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>org.flywaydb</groupId>
+                        <artifactId>flyway-mysql</artifactId>
+                        <version>${flyway.version}</version>
+                    </dependency>
+                </dependencies>
             </plugin>
         </plugins>
     </build>
