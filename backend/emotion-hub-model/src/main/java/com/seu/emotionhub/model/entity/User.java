@@ -1,12 +1,15 @@
 package com.seu.emotionhub.model.entity;
 
 import com.baomidou.mybatisplus.annotation.*;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 import java.time.LocalDateTime;
 
 /**
  * 用户实体类
  * 对应数据库的user表
+ *
+ * @author EmotionHub Team
  */
 @Data
 @TableName("user")
@@ -14,8 +17,6 @@ public class User {
 
     /**
      * 用户ID（主键，自增）
-     * @TableId 标记主键字段
-     * type = IdType.AUTO 表示主键自增
      */
     @TableId(type = IdType.AUTO)
     private Long id;
@@ -26,9 +27,16 @@ public class User {
     private String username;
 
     /**
-     * 密码（加密存储）
+     * 密码（BCrypt加密存储）
+     * 使用@JsonIgnore防止序列化时泄露密码
      */
+    @JsonIgnore
     private String password;
+
+    /**
+     * 邮箱（唯一）
+     */
+    private String email;
 
     /**
      * 昵称
@@ -41,31 +49,29 @@ public class User {
     private String avatar;
 
     /**
-     * 邮箱
+     * 个人简介
      */
-    private String email;
+    private String bio;
 
     /**
-     * 角色：USER-普通用户，ADMIN-管理员
+     * 角色：USER-普通用户 / ADMIN-管理员
      */
     private String role;
 
     /**
-     * 账号状态：0-正常，1-禁用
+     * 账号状态：ACTIVE-正常 / BANNED-禁用
      */
-    private Integer status;
+    private String status;
 
     /**
      * 创建时间
-     * @TableField(fill = FieldFill.INSERT) 表示插入时自动填充
      */
-    @TableField(fill = FieldFill.INSERT)
-    private LocalDateTime createTime;
+    @TableField(value = "created_at", fill = FieldFill.INSERT)
+    private LocalDateTime createdAt;
 
     /**
      * 更新时间
-     * @TableField(fill = FieldFill.INSERT_UPDATE) 表示插入和更新时都自动填充
      */
-    @TableField(fill = FieldFill.INSERT_UPDATE)
-    private LocalDateTime updateTime;
+    @TableField(value = "updated_at", fill = FieldFill.INSERT_UPDATE)
+    private LocalDateTime updatedAt;
 }
