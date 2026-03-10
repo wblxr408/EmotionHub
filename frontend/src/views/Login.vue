@@ -1,65 +1,132 @@
 <template>
-  <div class="vintage-login">
-    <div class="login-container">
+  <div class="auth-page">
+    <div class="auth-container">
       <!-- 标题区域 -->
-      <header class="login-header">
-        <h1 class="login-title">EMOTIONHUB</h1>
-        <div class="title-line"></div>
-        <p class="login-subtitle">Authentication Required</p>
+      <header class="auth-header">
+        <h1>EMOTIONHUB</h1>
+        <div class="divider"></div>
+        <p class="meta">ARCHIVE ACCESS PORTAL</p>
       </header>
 
-      <!-- 登录表单 -->
-      <div class="login-card card">
-        <form @submit.prevent="handleLogin" class="login-form">
-          <div class="form-group">
-            <label for="username" class="form-label">Username</label>
-            <input
-              id="username"
-              v-model="loginForm.username"
-              type="text"
-              class="form-input"
-              placeholder="Enter your username"
-              required
-            />
-          </div>
-
-          <div class="form-group">
-            <label for="password" class="form-label">Password</label>
-            <input
-              id="password"
-              v-model="loginForm.password"
-              type="password"
-              class="form-input"
-              placeholder="Enter your password"
-              required
-            />
-          </div>
-
-          <button type="submit" class="btn btn-primary login-btn" :disabled="loading">
-            <span v-if="!loading">Enter</span>
-            <span v-else class="loading-text">
-              Authenticating<span class="loading-cursor"></span>
-            </span>
-          </button>
-        </form>
-
-        <!-- 错误提示 -->
-        <div v-if="error" class="error-message">
-          <div class="error-line"></div>
-          <p class="error-text">{{ error }}</p>
+      <!-- Tab切换 -->
+      <div class="folder-tabs">
+        <div class="tab" :class="{ active: mode === 'login' }" @click="switchMode('login')">
+          LOGIN
         </div>
-
-        <!-- 提示信息 -->
-        <div class="login-footer">
-          <p class="footer-note">
-            <em>This feature is currently under development.</em>
-          </p>
+        <div class="tab" :class="{ active: mode === 'register' }" @click="switchMode('register')">
+          REGISTER
         </div>
       </div>
 
-      <!-- 返回首页 -->
+      <!-- 错误提示框 -->
+      <div v-if="errorMessage" class="error-banner">
+        <div class="error-icon">⚠</div>
+        <div class="error-content">
+          <div class="error-title">ACCESS DENIED</div>
+          <div class="error-message">{{ errorMessage }}</div>
+        </div>
+        <button class="error-close" @click="errorMessage = ''">✕</button>
+      </div>
+
+      <!-- 登录表单 -->
+      <div v-if="mode === 'login'" class="archive-card">
+        <form @submit.prevent="handleLogin">
+          <div class="form-group">
+            <label class="meta">USERNAME</label>
+            <input
+              v-model="loginForm.username"
+              type="text"
+              class="archive-input"
+              placeholder="Enter username..."
+              required
+              autocomplete="username"
+            />
+          </div>
+
+          <div class="form-group">
+            <label class="meta">PASSWORD</label>
+            <input
+              v-model="loginForm.password"
+              type="password"
+              class="archive-input"
+              placeholder="Enter password..."
+              required
+              autocomplete="current-password"
+            />
+          </div>
+
+          <!-- 测试账号提示 -->
+          <div class="test-account-hint">
+            <div class="meta" style="margin-bottom: 0.5rem;">Test Account:</div>
+            <div class="hint-text">alice_chen / password123</div>
+          </div>
+
+          <button type="submit" class="archive-button" :disabled="loading">
+            {{ loading ? 'AUTHENTICATING...' : 'ACCESS ARCHIVE' }}
+          </button>
+        </form>
+      </div>
+
+      <!-- 注册表单 -->
+      <div v-else class="archive-card">
+        <form @submit.prevent="handleRegister">
+          <div class="form-group">
+            <label class="meta">USERNAME</label>
+            <input
+              v-model="registerForm.username"
+              type="text"
+              class="archive-input"
+              placeholder="Choose username..."
+              required
+              autocomplete="username"
+            />
+          </div>
+
+          <div class="form-group">
+            <label class="meta">NICKNAME</label>
+            <input
+              v-model="registerForm.nickname"
+              type="text"
+              class="archive-input"
+              placeholder="Display name..."
+              required
+              autocomplete="name"
+            />
+          </div>
+
+          <div class="form-group">
+            <label class="meta">EMAIL</label>
+            <input
+              v-model="registerForm.email"
+              type="email"
+              class="archive-input"
+              placeholder="your.email@domain.com"
+              required
+              autocomplete="email"
+            />
+          </div>
+
+          <div class="form-group">
+            <label class="meta">PASSWORD</label>
+            <input
+              v-model="registerForm.password"
+              type="password"
+              class="archive-input"
+              placeholder="Enter password..."
+              required
+              autocomplete="new-password"
+            />
+          </div>
+
+          <button type="submit" class="archive-button" :disabled="loading">
+            {{ loading ? 'PROCESSING...' : 'CREATE ACCOUNT' }}
+          </button>
+        </form>
+      </div>
+
+      <!-- 返回链接 -->
       <div class="back-link">
-        <router-link to="/" class="link-text">← Return to Main Archive</router-link>
+        <router-link to="/" class="meta">← RETURN TO PLAZA</router-link>
       </div>
     </div>
   </div>
@@ -68,187 +135,228 @@
 <script setup lang="ts">
 import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { useUserStore } from '@/stores/user'
+import { ElMessage } from 'element-plus'
 
 const router = useRouter()
+const userStore = useUserStore()
+
+const mode = ref<'login' | 'register'>('login')
+const loading = ref(false)
+const errorMessage = ref('')
 
 const loginForm = reactive({
   username: '',
   password: ''
 })
 
-const loading = ref(false)
-const error = ref('')
+const registerForm = reactive({
+  username: '',
+  nickname: '',
+  email: '',
+  password: ''
+})
+
+// 切换模式时清空错误信息
+const switchMode = (newMode: 'login' | 'register') => {
+  mode.value = newMode
+  errorMessage.value = ''
+}
 
 const handleLogin = async () => {
   loading.value = true
-  error.value = ''
+  errorMessage.value = ''
 
-  // 模拟登录延迟
-  setTimeout(() => {
-    error.value = 'Authentication system is not yet operational. Please check back later.'
+  try {
+    await userStore.login(loginForm)
+    ElMessage.success('Authentication successful')
+    router.push('/')
+  } catch (error: any) {
+    console.error('Login error:', error)
+
+    // 提取错误信息
+    let msg = 'Login failed. Please check your credentials.'
+    if (error.response?.data?.message) {
+      msg = error.response.data.message
+    } else if (error.message) {
+      msg = error.message
+    }
+
+    // 显示在自定义错误框和Element Plus消息中
+    errorMessage.value = msg
+    ElMessage.error(msg)
+  } finally {
     loading.value = false
-  }, 1500)
+  }
+}
+
+const handleRegister = async () => {
+  loading.value = true
+  errorMessage.value = ''
+
+  try {
+    await userStore.register(registerForm)
+    ElMessage.success('Account created successfully')
+    router.push('/')
+  } catch (error: any) {
+    console.error('Register error:', error)
+
+    // 提取错误信息
+    let msg = 'Registration failed. Please try again.'
+    if (error.response?.data?.message) {
+      msg = error.response.data.message
+    } else if (error.message) {
+      msg = error.message
+    }
+
+    // 显示在自定义错误框和Element Plus消息中
+    errorMessage.value = msg
+    ElMessage.error(msg)
+  } finally {
+    loading.value = false
+  }
 }
 </script>
 
-<style scoped>
-.vintage-login {
+<style scoped lang="scss">
+@import '@/styles/theme.scss';
+
+.auth-page {
   min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: var(--spacing-md);
+  padding: 2rem;
 }
 
-.login-container {
+.auth-container {
   width: 100%;
   max-width: 500px;
 }
 
-/* 标题区域 */
-.login-header {
+.auth-header {
   text-align: center;
-  margin-bottom: var(--spacing-lg);
-}
+  margin-bottom: 2rem;
 
-.login-title {
-  font-size: 2.5rem;
-  letter-spacing: 0.15em;
-  margin-bottom: var(--spacing-sm);
-}
+  h1 {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+  }
 
-.title-line {
-  width: 150px;
-  height: 2px;
-  background-color: var(--color-burgundy);
-  margin: var(--spacing-sm) auto;
-}
-
-.login-subtitle {
-  font-family: var(--font-serif);
-  font-style: italic;
-  font-size: 1rem;
-  color: var(--color-sand);
-  letter-spacing: 0.05em;
-}
-
-/* 登录卡片 */
-.login-card {
-  padding: var(--spacing-lg);
-}
-
-.login-form {
-  margin-bottom: var(--spacing-md);
+  .meta {
+    margin-top: 1rem;
+  }
 }
 
 .form-group {
-  margin-bottom: var(--spacing-md);
-  text-align: left;
-}
+  margin-bottom: 1.5rem;
 
-.form-label {
-  display: block;
-  font-family: var(--font-serif);
-  font-size: 0.9rem;
-  letter-spacing: 0.05em;
-  color: var(--color-burgundy);
-  margin-bottom: var(--spacing-xs);
-  text-transform: uppercase;
-}
-
-.form-input {
-  width: 100%;
-  font-family: var(--font-body);
-  font-size: 1rem;
-  padding: 0.75rem 1rem;
-  border: var(--border-thin);
-  background-color: rgba(255, 255, 255, 0.3);
-  color: var(--color-charcoal);
-  transition: var(--transition-smooth);
-}
-
-.form-input:focus {
-  outline: none;
-  border-color: var(--color-burgundy);
-  background-color: rgba(255, 255, 255, 0.5);
-}
-
-.form-input::placeholder {
-  color: var(--color-sand);
-  font-style: italic;
-}
-
-.login-btn {
-  width: 100%;
-  margin-top: var(--spacing-sm);
-}
-
-.loading-text {
-  display: inline-flex;
-  align-items: center;
-}
-
-/* 错误提示 */
-.error-message {
-  margin-top: var(--spacing-md);
-  padding-top: var(--spacing-md);
-}
-
-.error-line {
-  width: 100%;
-  height: 2px;
-  background-color: var(--color-burgundy);
-  margin-bottom: var(--spacing-sm);
-}
-
-.error-text {
-  color: var(--color-burgundy);
-  font-style: italic;
-  font-size: 0.95rem;
-  text-align: center;
-}
-
-/* 页脚提示 */
-.login-footer {
-  margin-top: var(--spacing-md);
-  padding-top: var(--spacing-md);
-  border-top: var(--border-thin);
-  text-align: center;
-}
-
-.footer-note {
-  font-size: 0.85rem;
-  color: var(--color-sand);
-}
-
-/* 返回链接 */
-.back-link {
-  text-align: center;
-  margin-top: var(--spacing-md);
-}
-
-.link-text {
-  font-family: var(--font-serif);
-  font-size: 0.9rem;
-  color: var(--color-burgundy);
-  text-decoration: none;
-  letter-spacing: 0.05em;
-  transition: var(--transition-smooth);
-}
-
-.link-text:hover {
-  color: var(--color-charcoal);
-  text-decoration: underline;
-}
-
-/* 响应式 */
-@media (max-width: 768px) {
-  .login-title {
-    font-size: 2rem;
+  label {
+    display: block;
+    margin-bottom: 0.5rem;
   }
 
-  .login-card {
-    padding: var(--spacing-md);
+  .archive-input {
+    width: 100%;
+  }
+}
+
+.archive-button {
+  width: 100%;
+  margin-top: 1rem;
+}
+
+.back-link {
+  text-align: center;
+  margin-top: 2rem;
+
+  a {
+    color: $color-bordeaux;
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}
+
+// 错误提示框
+.error-banner {
+  background-color: #FFEBEE;
+  border: 3px solid #C62828;
+  padding: 1.25rem;
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  box-shadow: 4px 4px 0 rgba(198, 40, 40, 0.2);
+  position: relative;
+
+  .error-icon {
+    font-size: 1.75rem;
+    color: #C62828;
+    font-weight: bold;
+    line-height: 1;
+    flex-shrink: 0;
+  }
+
+  .error-content {
+    flex: 1;
+
+    .error-title {
+      font-family: $font-mono;
+      font-size: 0.875rem;
+      font-weight: 700;
+      color: #B71C1C;
+      letter-spacing: 0.15em;
+      margin-bottom: 0.5rem;
+    }
+
+    .error-message {
+      font-family: $font-body;
+      font-size: 0.95rem;
+      color: #C62828;
+      font-weight: 600;
+      line-height: 1.5;
+    }
+  }
+
+  .error-close {
+    background: none;
+    border: none;
+    color: #C62828;
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 0;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    line-height: 1;
+
+    &:hover {
+      color: #B71C1C;
+      font-weight: bold;
+    }
+  }
+}
+
+// 测试账号提示
+.test-account-hint {
+  background-color: rgba(92, 1, 32, 0.05);
+  border: 1px dashed $color-bordeaux;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  text-align: center;
+
+  .hint-text {
+    font-family: $font-mono;
+    font-size: 0.95rem;
+    color: $color-bordeaux;
+    font-weight: 600;
+    letter-spacing: 0.05em;
   }
 }
 </style>

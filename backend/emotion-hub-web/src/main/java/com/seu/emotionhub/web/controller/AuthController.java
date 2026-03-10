@@ -35,10 +35,22 @@ public class AuthController {
      */
     @PostMapping("/register")
     @Operation(summary = "用户注册", description = "注册新用户账号")
-    public Result<UserInfoVO> register(@Valid @RequestBody UserRegisterRequest request) {
+    public Result<Map<String, Object>> register(@Valid @RequestBody UserRegisterRequest request) {
         log.info("用户注册请求: username={}", request.getUsername());
         UserInfoVO userInfo = userService.register(request);
-        return Result.success("注册成功", userInfo);
+
+        // 注册成功后自动登录，生成Token
+        UserLoginRequest loginRequest = new UserLoginRequest();
+        loginRequest.setUsername(request.getUsername());
+        loginRequest.setPassword(request.getPassword());
+        String token = userService.login(loginRequest);
+
+        // 组装返回数据
+        Map<String, Object> data = new HashMap<>();
+        data.put("token", token);
+        data.put("userInfo", userInfo);
+
+        return Result.success("注册成功", data);
     }
 
     /**
@@ -50,10 +62,13 @@ public class AuthController {
         log.info("用户登录请求: username={}", request.getUsername());
         String token = userService.login(request);
 
+        // 获取用户信息
+        UserInfoVO userInfo = userService.getCurrentUser();
+
         // 组装返回数据
         Map<String, Object> data = new HashMap<>();
         data.put("token", token);
-        data.put("tokenType", "Bearer");
+        data.put("userInfo", userInfo);
 
         return Result.success("登录成功", data);
     }

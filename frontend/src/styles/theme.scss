@@ -1,0 +1,363 @@
+/**
+ * EmotionHub - The Archive Vault Theme
+ * 1940s-inspired analog bureaucracy meets modern editorial design
+ */
+
+// ============================================
+// Color Palette (Strictly enforced)
+// ============================================
+$color-parchment: #DAD3B6;      // Aged parchment cream (primary background)
+$color-bordeaux: #5C0120;       // Deep Bordeaux wine red (primary accent)
+$color-charcoal: #2D2926;       // Charcoal typewriter ink (text)
+$color-border: #A69E85;         // Double-line border color
+$color-shadow: rgba(45, 41, 38, 0.25); // Hard shadow
+
+// ============================================
+// Typography
+// ============================================
+$font-heading: 'Playfair Display', Georgia, serif;
+$font-body: 'Lora', 'Times New Roman', serif;
+$font-mono: 'Courier New', 'Courier', monospace;
+
+// ============================================
+// Spacing & Layout
+// ============================================
+$border-radius: 0; // NO ROUNDED CORNERS
+$shadow-offset: 3px;
+$border-width: 1px;
+$border-double: 2px;
+
+// ============================================
+// Global Reset
+// ============================================
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  background: $color-parchment;
+  color: $color-charcoal;
+  font-family: $font-body;
+  font-size: 16px;
+  line-height: 1.6;
+  letter-spacing: 0.02em; // Slightly wider for cinematic look
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+// Paper grain texture overlay
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image:
+    url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' /%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.05'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 9999;
+}
+
+#app {
+  min-height: 100vh;
+  position: relative;
+}
+
+// ============================================
+// Typography Styles
+// ============================================
+h1, h2, h3, h4, h5, h6 {
+  font-family: $font-heading;
+  font-weight: 700;
+  color: $color-bordeaux;
+  letter-spacing: 0.05em;
+  line-height: 1.2;
+}
+
+h1 { font-size: 3rem; }
+h2 { font-size: 2.5rem; }
+h3 { font-size: 2rem; }
+h4 { font-size: 1.5rem; }
+h5 { font-size: 1.25rem; }
+h6 { font-size: 1rem; }
+
+p {
+  margin-bottom: 1rem;
+}
+
+// Monospace for metadata
+.meta, .timestamp, .label {
+  font-family: $font-mono;
+  font-size: 0.875rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+// ============================================
+// Card Component (Manila folder style)
+// ============================================
+.archive-card {
+  background: $color-parchment;
+  border: $border-double solid $color-border;
+  border-radius: $border-radius;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  position: relative;
+
+  // Hard-offset solid shadow (tactile stacked-paper effect)
+  box-shadow: $shadow-offset $shadow-offset 0 $color-shadow;
+
+  // Subtle imperfect alignment
+  transform: rotate(-0.3deg);
+
+  &:hover {
+    transform: rotate(0deg) translateY(-2px);
+    transition: transform 0.2s ease;
+  }
+
+  // Double-line border effect
+  &::before {
+    content: '';
+    position: absolute;
+    top: 4px;
+    left: 4px;
+    right: 4px;
+    bottom: 4px;
+    border: $border-width solid $color-border;
+    pointer-events: none;
+  }
+}
+
+// ============================================
+// Button Component (No rounded pills!)
+// ============================================
+.archive-button {
+  background: $color-bordeaux;
+  color: $color-parchment;
+  border: none;
+  border-radius: $border-radius;
+  padding: 0.75rem 2rem;
+  font-family: $font-mono;
+  font-size: 0.875rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  cursor: pointer;
+  position: relative;
+
+  // Hard shadow (mechanical press effect)
+  box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.3);
+
+  &:hover {
+    transform: translate(1px, 1px);
+    box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.3);
+  }
+
+  &:active {
+    transform: translate(3px, 3px);
+    box-shadow: none;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+// Secondary button (outline style)
+.archive-button-outline {
+  background: transparent;
+  color: $color-bordeaux;
+  border: $border-double solid $color-bordeaux;
+
+  &:hover {
+    background: $color-bordeaux;
+    color: $color-parchment;
+  }
+}
+
+// ============================================
+// Rubber Stamp Effect
+// ============================================
+.stamp {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border: 2px solid currentColor;
+  font-family: $font-mono;
+  font-size: 0.75rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  transform: rotate(-3deg);
+  position: relative;
+
+  &.stamp-logged {
+    color: $color-bordeaux;
+  }
+
+  &.stamp-pending {
+    color: $color-border;
+  }
+
+  // Ink bleed effect on active
+  &::after {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    border: 1px solid currentColor;
+    opacity: 0.3;
+  }
+}
+
+// ============================================
+// Paperclip Icon
+// ============================================
+.paperclip {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border: 2px solid $color-charcoal;
+  border-radius: 8px 8px 0 0;
+  border-bottom: none;
+  position: relative;
+
+  &::before {
+    content: '';
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    border: 2px solid $color-charcoal;
+    border-radius: 6px 6px 0 0;
+    border-bottom: none;
+    top: 3px;
+    left: 2px;
+  }
+}
+
+// ============================================
+// Divider (Hairline)
+// ============================================
+.divider {
+  height: 1px;
+  background: $color-border;
+  margin: 2rem 0;
+  position: relative;
+
+  // Double line
+  &::after {
+    content: '';
+    position: absolute;
+    width: 100%;
+    height: 1px;
+    background: $color-border;
+    top: 3px;
+  }
+}
+
+// ============================================
+// Form Elements
+// ============================================
+.archive-input {
+  background: rgba(255, 255, 255, 0.5);
+  border: $border-width solid $color-border;
+  border-radius: $border-radius;
+  padding: 0.75rem 1rem;
+  font-family: $font-body;
+  color: $color-charcoal;
+  width: 100%;
+
+  &:focus {
+    outline: none;
+    border-color: $color-bordeaux;
+    box-shadow: inset 2px 2px 0 rgba(92, 1, 32, 0.1);
+  }
+
+  &::placeholder {
+    color: $color-border;
+    font-style: italic;
+  }
+}
+
+textarea.archive-input {
+  font-family: $font-mono;
+  line-height: 1.8;
+  resize: vertical;
+  min-height: 120px;
+}
+
+// ============================================
+// Tab Navigation (Manila folder tabs)
+// ============================================
+.folder-tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: -1px;
+
+  .tab {
+    background: rgba(166, 158, 133, 0.3);
+    border: $border-width solid $color-border;
+    border-bottom: none;
+    padding: 0.5rem 1.5rem;
+    font-family: $font-mono;
+    font-size: 0.875rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    cursor: pointer;
+    position: relative;
+
+    &.active {
+      background: $color-parchment;
+      border-top-width: 3px;
+      border-top-color: $color-bordeaux;
+      z-index: 1;
+    }
+
+    &:hover:not(.active) {
+      background: rgba(166, 158, 133, 0.5);
+    }
+  }
+}
+
+// ============================================
+// Animations (Subtle, mechanical)
+// ============================================
+@keyframes ink-bleed {
+  0%, 100% { opacity: 0.8; }
+  50% { opacity: 1; }
+}
+
+@keyframes typewriter {
+  from { width: 0; }
+  to { width: 100%; }
+}
+
+// Ink bleed effect for active text
+.ink-bleed {
+  animation: ink-bleed 2s ease-in-out infinite;
+}
+
+// ============================================
+// Utility Classes
+// ============================================
+.text-bordeaux { color: $color-bordeaux; }
+.text-charcoal { color: $color-charcoal; }
+.text-center { text-align: center; }
+.text-right { text-align: right; }
+
+.mt-1 { margin-top: 0.5rem; }
+.mt-2 { margin-top: 1rem; }
+.mt-3 { margin-top: 1.5rem; }
+.mt-4 { margin-top: 2rem; }
+
+.mb-1 { margin-bottom: 0.5rem; }
+.mb-2 { margin-bottom: 1rem; }
+.mb-3 { margin-bottom: 1.5rem; }
+.mb-4 { margin-bottom: 2rem; }
+
+.p-1 { padding: 0.5rem; }
+.p-2 { padding: 1rem; }
+.p-3 { padding: 1.5rem; }
+.p-4 { padding: 2rem; }

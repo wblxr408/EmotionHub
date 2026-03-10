@@ -1,0 +1,231 @@
+/**
+ * Element Plus样式覆盖
+ * 确保在复古主题下的可读性
+ */
+
+// 导入主题变量
+@import './theme.scss';
+
+// ============================================
+// Message 消息提示样式覆盖
+// ============================================
+.el-message {
+  // 增加z-index确保在最上层
+  z-index: 10000 !important;
+
+  // 加强边框和阴影
+  border-width: 2px !important;
+  box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.3) !important;
+
+  // 使用等宽字体，符合复古风格
+  font-family: $font-mono !important;
+  font-size: 0.875rem !important;
+  letter-spacing: 0.05em !important;
+
+  // 移除圆角
+  border-radius: 0 !important;
+
+  // 加粗文字
+  font-weight: 600 !important;
+
+  // 增加内边距
+  padding: 16px 20px !important;
+
+  // 最小宽度
+  min-width: 300px !important;
+}
+
+// 错误消息 - 高对比度红色
+.el-message--error {
+  background-color: #FFEBEE !important; // 浅红色背景
+  border-color: #C62828 !important; // 深红色边框
+
+  .el-message__content {
+    color: #B71C1C !important; // 深红色文字
+    font-weight: 700 !important;
+  }
+
+  .el-message__icon {
+    color: #C62828 !important;
+    font-size: 20px !important;
+  }
+}
+
+// 成功消息 - 使用bordeaux酒红色
+.el-message--success {
+  background-color: #E8F5E9 !important; // 浅绿色背景
+  border-color: $color-bordeaux !important;
+
+  .el-message__content {
+    color: #1B5E20 !important; // 深绿色文字
+    font-weight: 700 !important;
+  }
+
+  .el-message__icon {
+    color: #2E7D32 !important;
+    font-size: 20px !important;
+  }
+}
+
+// 警告消息
+.el-message--warning {
+  background-color: #FFF3E0 !important; // 浅橙色背景
+  border-color: #E65100 !important; // 深橙色边框
+
+  .el-message__content {
+    color: #E65100 !important;
+    font-weight: 700 !important;
+  }
+
+  .el-message__icon {
+    color: #F57C00 !important;
+    font-size: 20px !important;
+  }
+}
+
+// 信息消息
+.el-message--info {
+  background-color: #E3F2FD !important; // 浅蓝色背景
+  border-color: #1565C0 !important; // 深蓝色边框
+
+  .el-message__content {
+    color: #0D47A1 !important;
+    font-weight: 700 !important;
+  }
+
+  .el-message__icon {
+    color: #1976D2 !important;
+    font-size: 20px !important;
+  }
+}
+
+// ============================================
+// Loading 加载样式覆盖
+// ============================================
+.el-loading-mask {
+  background-color: rgba(218, 211, 182, 0.9) !important; // 半透明parchment色
+
+  .el-loading-spinner {
+    .circular {
+      stroke: $color-bordeaux !important;
+      stroke-width: 3px !important;
+    }
+
+    .el-loading-text {
+      color: $color-bordeaux !important;
+      font-family: $font-mono !important;
+      font-size: 1rem !important;
+      letter-spacing: 0.1em !important;
+      font-weight: 600 !important;
+    }
+  }
+}
+
+// ============================================
+// Notification 通知样式覆盖
+// ============================================
+.el-notification {
+  border: 2px solid $color-border !important;
+  border-radius: 0 !important;
+  box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.3) !important;
+  background-color: $color-parchment !important;
+
+  .el-notification__title {
+    color: $color-bordeaux !important;
+    font-family: $font-heading !important;
+    font-weight: 700 !important;
+  }
+
+  .el-notification__content {
+    color: $color-charcoal !important;
+    font-family: $font-body !important;
+  }
+}
+
+// ============================================
+// Dialog 对话框样式覆盖
+// ============================================
+.el-dialog {
+  border: 2px solid $color-border !important;
+  border-radius: 0 !important;
+  box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.3) !important;
+  background-color: $color-parchment !important;
+
+  .el-dialog__header {
+    background-color: transparent !important;
+    border-bottom: 1px solid $color-border !important;
+    padding: 1.5rem !important;
+
+    .el-dialog__title {
+      color: $color-bordeaux !important;
+      font-family: $font-heading !important;
+      font-size: 1.5rem !important;
+      font-weight: 700 !important;
+      letter-spacing: 0.05em !important;
+    }
+  }
+
+  .el-dialog__body {
+    padding: 1.5rem !important;
+    color: $color-charcoal !important;
+  }
+
+  .el-dialog__footer {
+    border-top: 1px solid $color-border !important;
+    padding: 1rem 1.5rem !important;
+  }
+}
+
+// 对话框遮罩
+.el-overlay {
+  background-color: rgba(45, 41, 38, 0.7) !important;
+}
+
+// ============================================
+// Input 输入框样式覆盖（如果用到Element Plus的输入框）
+// ============================================
+.el-input__wrapper {
+  background-color: rgba(255, 255, 255, 0.5) !important;
+  border: 1px solid $color-border !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+
+  &:hover {
+    box-shadow: none !important;
+  }
+
+  &.is-focus {
+    border-color: $color-bordeaux !important;
+    box-shadow: inset 2px 2px 0 rgba(92, 1, 32, 0.1) !important;
+  }
+}
+
+.el-input__inner {
+  color: $color-charcoal !important;
+  font-family: $font-body !important;
+
+  &::placeholder {
+    color: $color-border !important;
+    font-style: italic !important;
+  }
+}
+
+// ============================================
+// Popover/Tooltip 弹出框样式
+// ============================================
+.el-popper {
+  background-color: $color-parchment !important;
+  border: 1px solid $color-border !important;
+  border-radius: 0 !important;
+  box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.2) !important;
+
+  &.is-dark {
+    background-color: $color-charcoal !important;
+    border-color: $color-charcoal !important;
+
+    .el-popper__arrow::before {
+      background-color: $color-charcoal !important;
+      border-color: $color-charcoal !important;
+    }
+  }
+}

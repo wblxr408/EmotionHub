@@ -15,6 +15,7 @@ import com.seu.emotionhub.model.entity.Post;
 import com.seu.emotionhub.model.entity.User;
 import com.seu.emotionhub.model.enums.TargetType;
 import com.seu.emotionhub.service.InteractionService;
+import com.seu.emotionhub.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
@@ -43,6 +44,7 @@ public class InteractionServiceImpl implements InteractionService {
     private final CommentMapper commentMapper;
     private final PostMapper postMapper;
     private final UserMapper userMapper;
+    private final NotificationService notificationService;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -78,6 +80,10 @@ public class InteractionServiceImpl implements InteractionService {
             likeRecordMapper.insert(likeRecord);
             updateLikeCount(targetId, targetType, 1);
             log.info("点赞成功: userId={}, targetId={}, targetType={}", userId, targetId, targetType);
+
+            // 发送点赞通知
+            sendLikeNotification(userId, targetId, targetType);
+
             return true;
         }
     }
@@ -129,7 +135,8 @@ public class InteractionServiceImpl implements InteractionService {
 
         log.info("发表评论成功: userId={}, postId={}, commentId={}", userId, request.getPostId(), comment.getId());
 
-        // TODO: 发送通知给帖子作者或被回复者
+        // 发送评论通知给帖子作者或被回复者
+        sendCommentNotification(userId, post, comment, request.getParentId());
 
         return convertToCommentVO(comment);
     }
@@ -278,6 +285,64 @@ public class InteractionServiceImpl implements InteractionService {
         }
 
         return vo;
+    }
+
+    /**
+     * 发送点赞通知
+     */
+    private void sendLikeNotification(Long likerId, Long targetId, String targetType) {
+        try {
+            if (TargetType.POST.getCode().equals(targetType)) {
+                // 点赞帖子
+                Post post = postMapper.selectById(targetId);
+                if (post != null && !post.getUserId().equals(likerId)) {
+                    User liker = userMapper.selectById(likerId);
+                    String title = "New Like";
+                    String content = String.format("%s liked your post", liker != null ? liker.getNickname() : "Someone");
+                    notificationService.createNotification(post.getUserId(), "LIKE", title, content, targetId);
+                }
+            } else if (TargetType.COMMENT.getCode().equals(targetType)) {
+                // 点赞评论
+                Comment comment = commentMapper.selectById(targetId);
+                if (comment != null && !comment.getUserId().equals(likerId)) {
+                    User liker = userMapper.selectById(likerId);
+                    String title = "New Like";
+                    String content = String.format("%s liked your comment", liker != null ? liker.getNickname() : "Someone");
+                    notificationService.createNotification(comment.getUserId(), "LIKE", title, content, comment.getPostId());
+                }
+            }
+        } catch (Exception e) {
+            log.error("发送点赞通知失败", e);
+        }
+    }
+
+    /**
+     * 发送评论通知
+     */
+    private void sendCommentNotification(Long commenterId, Post post, Comment comment, Long parentId) {
+        try {
+            User commenter = userMapper.selectById(commenterId);
+            String commenterName = commenter != null ? commenter.getNickname() : "Someone";
+
+            if (parentId != null) {
+                // 回复评论
+                Comment parentComment = commentMapper.selectById(parentId);
+                if (parentComment != null && !parentComment.getUserId().equals(commenterId)) {
+                    String title = "New Reply";
+                    String content = String.format("%s replied to your comment", commenterName);
+                    notificationService.createNotification(parentComment.getUserId(), "COMMENT", title, content, post.getId());
+                }
+            } else {
+                // 评论帖子
+                if (!post.getUserId().equals(commenterId)) {
+                    String title = "New Comment";
+                    String content = String.format("%s commented on your post", commenterName);
+                    notificationService.createNotification(post.getUserId(), "COMMENT", title, content, post.getId());
+                }
+            }
+        } catch (Exception e) {
+            log.error("发送评论通知失败", e);
+        }
     }
 
     /**

@@ -70,11 +70,11 @@ public class JwtUtil {
      */
     public Claims parseToken(String token) {
         try {
-            return Jwts.parserBuilder()
-                    .setSigningKey(getSecretKey())
+            return Jwts.parser()
+                    .verifyWith(getSecretKey())
                     .build()
-                    .parseClaimsJws(token)
-                    .getBody();
+                    .parseSignedClaims(token)
+                    .getPayload();
         } catch (Exception e) {
             log.error("解析Token失败: {}", e.getMessage());
             return null;

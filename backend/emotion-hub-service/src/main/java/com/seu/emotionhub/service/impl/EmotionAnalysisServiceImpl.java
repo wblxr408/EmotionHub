@@ -1,4 +1,5 @@
 package com.seu.emotionhub.service.impl;
+import org.springframework.context.annotation.Primary;
 
 import com.seu.emotionhub.dao.mapper.PostMapper;
 import com.seu.emotionhub.model.entity.Post;
@@ -24,6 +25,7 @@ import java.util.Random;
  */
 @Slf4j
 @Service
+@Primary
 @RequiredArgsConstructor
 public class EmotionAnalysisServiceImpl implements EmotionAnalysisService {
 

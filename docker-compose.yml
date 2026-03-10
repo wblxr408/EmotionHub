@@ -4,125 +4,33 @@ services:
   # MySQL数据库
   mysql:
     image: mysql:8.0
-    container_name: emotion-hub-mysql
+    container_name: emotionhub-mysql
     restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: emotion_hub_2024
-      MYSQL_DATABASE: emotion_hub
+      MYSQL_ROOT_PASSWORD: 123456
+      MYSQL_DATABASE: emotionhub
       MYSQL_USER: emotionhub
-      MYSQL_PASSWORD: emotionhub_pass
-      TZ: Asia/Shanghai
+      MYSQL_PASSWORD: 123456
     ports:
       - "3306:3306"
     volumes:
-      - mysql_data:/var/lib/mysql
-      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
-    command: --default-authentication-plugin=mysql_native_password --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
-    networks:
-      - emotion-hub-network
-    healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      - mysql-data:/var/lib/mysql
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --default-authentication-plugin=mysql_native_password
 
   # Redis缓存
   redis:
-    image: redis:7.0-alpine
-    container_name: emotion-hub-redis
+    image: redis:6-alpine
+    container_name: emotionhub-redis
     restart: always
     ports:
       - "6379:6379"
     volumes:
-      - redis_data:/data
+      - redis-data:/data
     command: redis-server --appendonly yes
-    networks:
-      - emotion-hub-network
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  # 后端服务
-  backend:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    container_name: emotion-hub-backend
-    restart: always
-    ports:
-      - "8080:8080"
-    environment:
-      SPRING_PROFILES_ACTIVE: prod
-      DB_USERNAME: emotionhub
-      DB_PASSWORD: emotionhub_pass
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
-      JWT_SECRET: EmotionHub_Production_Secret_Key_2024_Change_This
-      # LLM配置（需要替换为实际的API Key）
-      LLM_OPENAI_ENABLED: "false"
-      LLM_OPENAI_KEY: "your_openai_api_key"
-      LLM_QIANWEN_ENABLED: "true"
-      LLM_QIANWEN_KEY: "your_qianwen_api_key"
-    depends_on:
-      mysql:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    networks:
-      - emotion-hub-network
-    volumes:
-      - backend_logs:/var/log/emotion-hub
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/api/actuator/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-
-  # 前端服务
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-    container_name: emotion-hub-frontend
-    restart: always
-    ports:
-      - "80:80"
-    depends_on:
-      - backend
-    networks:
-      - emotion-hub-network
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:80"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-
-  # Nginx反向代理（可选）
-  nginx:
-    image: nginx:alpine
-    container_name: emotion-hub-nginx
-    restart: always
-    ports:
-      - "443:443"
-    volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./nginx/ssl:/etc/nginx/ssl:ro
-    depends_on:
-      - frontend
-      - backend
-    networks:
-      - emotion-hub-network
-
-networks:
-  emotion-hub-network:
-    driver: bridge
 
 volumes:
-  mysql_data:
-    driver: local
-  redis_data:
-    driver: local
-  backend_logs:
-    driver: local
+  mysql-data:
+  redis-data:

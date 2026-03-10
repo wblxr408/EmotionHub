@@ -1,15 +1,25 @@
 <template>
   <div id="app">
-    <transition name="fade" mode="out-in">
+    <AppHeader v-if="!isLoginPage" />
+    <main class="app-main">
       <router-view />
-    </transition>
+    </main>
   </div>
 </template>
 
 <script setup lang="ts">
-// App根组件 - 复古学院派设计
+import { computed } from 'vue'
+import { useRoute } from 'vue-router'
+import AppHeader from './components/AppHeader.vue'
+
+const route = useRoute()
+const isLoginPage = computed(() => route.path === '/login')
 </script>
 
-<style>
-@import './assets/styles/vintage.css';
+<style lang="scss">
+@import './styles/theme.scss';
+
+.app-main {
+  min-height: calc(100vh - 100px);
+}
 </style>

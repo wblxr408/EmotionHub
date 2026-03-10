@@ -12,12 +12,9 @@ spring:
   # 数据源配置
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://localhost:3306/emotion_hub?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
-    # 注意：本地开发需要在环境变量中配置以下值：
-    #   EMOTIONHUB_DB_USERNAME_DEV - 数据库用户名
-    #   EMOTIONHUB_DB_PASSWORD_DEV - 数据库密码
-    username: ${EMOTIONHUB_DB_USERNAME_DEV}
-    password: ${EMOTIONHUB_DB_PASSWORD_DEV}
+    url: jdbc:mysql://localhost:3306/emotionhub?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+    username: root
+    password:
     # Hikari连接池配置
     hikari:
       minimum-idle: 5
@@ -76,23 +73,14 @@ jwt:
   header: Authorization
   prefix: Bearer
 
-# LLM配置
-llm:
-  # OpenAI配置
-  openai:
-    enabled: true
-    api-key: your_openai_api_key_here
-    api-url: https://api.openai.com/v1/chat/completions
-    model: gpt-3.5-turbo
-    timeout: 30000
+# 通义千问API配置
+dashscope:
+  api-key: ${DASHSCOPE_API_KEY:}  # 从环境变量读取，或者直接填写
 
-  # 通义千问配置
-  qianwen:
-    enabled: true
-    api-key: your_qianwen_api_key_here
-    api-url: https://dashscope.aliyuncs.com/api/v1/services/aigc/text-generation/generation
-    model: qwen-turbo
-    timeout: 30000
+# 情感分析配置
+emotion:
+  analysis:
+    provider: qwen  # keyword/qwen，默认使用关键词分析，配置api-key后使用通义千问
 
   # 文心一言配置
   wenxin:
@@ -149,7 +137,7 @@ logging:
 
 # 服务器配置
 server:
-  port: 8080
+  port: 8081
   servlet:
     context-path: /api
   compression:

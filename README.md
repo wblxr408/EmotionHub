@@ -1,2 +1,0 @@
-# SEU_Java_Exercise_Project
-该项目是由东南大学学生创立的有关后端开发练手的项目

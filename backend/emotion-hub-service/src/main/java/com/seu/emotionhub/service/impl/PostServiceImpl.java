@@ -117,8 +117,8 @@ public class PostServiceImpl implements PostService {
         return new PageResult<>(
                 postVOList,
                 postPage.getTotal(),
-                postPage.getCurrent(),
-                postPage.getSize()
+                (int) postPage.getCurrent(),
+                (int) postPage.getSize()
         );
     }
 
@@ -183,8 +183,8 @@ public class PostServiceImpl implements PostService {
         return new PageResult<>(
                 postVOList,
                 postPage.getTotal(),
-                postPage.getCurrent(),
-                postPage.getSize()
+                (int) postPage.getCurrent(),
+                (int) postPage.getSize()
         );
     }
 

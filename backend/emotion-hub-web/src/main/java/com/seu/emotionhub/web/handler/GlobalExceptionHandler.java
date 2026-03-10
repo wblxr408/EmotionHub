@@ -54,7 +54,7 @@ public class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.METHOD_NOT_ALLOWED)
     public Result<?> handleMethodNotSupportedException(HttpRequestMethodNotSupportedException e) {
         log.warn("请求方法不支持: {}", e.getMessage());
-        return Result.error(ErrorCode.METHOD_NOT_ALLOWED);
+        return Result.error(ErrorCode.METHOD_NOT_ALLOWED.getCode(), ErrorCode.METHOD_NOT_ALLOWED.getMessage());
     }
 
     /**
@@ -74,7 +74,7 @@ public class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public Result<?> handleNullPointerException(NullPointerException e) {
         log.error("空指针异常", e);
-        return Result.error(ErrorCode.SYSTEM_ERROR);
+        return Result.error(ErrorCode.SYSTEM_ERROR.getCode(), ErrorCode.SYSTEM_ERROR.getMessage());
     }
 
     /**
