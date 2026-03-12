@@ -16,6 +16,7 @@ import com.seu.emotionhub.model.entity.User;
 import com.seu.emotionhub.model.enums.TargetType;
 import com.seu.emotionhub.service.InteractionService;
 import com.seu.emotionhub.service.NotificationService;
+import com.seu.emotionhub.service.SentimentPropagationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
@@ -45,6 +46,7 @@ public class InteractionServiceImpl implements InteractionService {
     private final PostMapper postMapper;
     private final UserMapper userMapper;
     private final NotificationService notificationService;
+    private final SentimentPropagationService sentimentPropagationService;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -137,6 +139,15 @@ public class InteractionServiceImpl implements InteractionService {
 
         // 发送评论通知给帖子作者或被回复者
         sendCommentNotification(userId, post, comment, request.getParentId());
+
+        // 异步记录情感传播（如果评论已完成情感分析）
+        // 注意：评论创建时情感分析可能异步进行，这里先尝试记录
+        // 如果评论情感分数尚未计算，propagationService会记录日志并跳过
+        try {
+            sentimentPropagationService.recordCommentPropagation(request.getPostId(), comment.getId());
+        } catch (Exception e) {
+            log.warn("记录评论情感传播失败（非致命错误）: commentId={}", comment.getId(), e);
+        }
 
         return convertToCommentVO(comment);
     }

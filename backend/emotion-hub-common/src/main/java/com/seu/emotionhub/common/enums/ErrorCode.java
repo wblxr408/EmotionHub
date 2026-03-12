@@ -64,7 +64,8 @@ public enum ErrorCode {
     NOT_LIKED_YET(7002, "还未点赞"),
     CANNOT_LIKE_OWN_POST(7003, "不能给自己的帖子点赞"),
     SENSITIVE_WORD_DETECTED(7004, "内容包含敏感词"),
-    DUPLICATE_OPERATION(7005, "重复操作");
+    DUPLICATE_OPERATION(7005, "重复操作"),
+    OPERATION_ERROR(7006, "操作失败");
 
     /**
      * 错误码
