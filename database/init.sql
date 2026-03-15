@@ -166,6 +166,64 @@ CREATE TABLE `notification` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='通知表';
 
 -- ============================================
+-- 8. 用户情感影响力评分表 (user_influence_score)
+-- Sprint 1.3: 用户情感影响力评分模块
+-- ============================================
+DROP TABLE IF EXISTS `user_influence_score`;
+CREATE TABLE `user_influence_score` (
+  `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '影响力记录ID',
+  `user_id` BIGINT NOT NULL COMMENT '用户ID',
+  `influence_score` DECIMAL(6,4) NOT NULL DEFAULT 0.0000 COMMENT '综合影响力分数（0-100，通过PageRank变体算法计算）',
+  `positive_impact` DECIMAL(6,4) NOT NULL DEFAULT 0.0000 COMMENT '正面影响力（引发正面评论的能力，0-100）',
+  `negative_impact` DECIMAL(6,4) NOT NULL DEFAULT 0.0000 COMMENT '负面影响力（引发负面评论的能力，0-100）',
+  `controversial_score` DECIMAL(6,4) NOT NULL DEFAULT 0.0000 COMMENT '争议性分数（引发情感分化的程度，0-100）',
+  `post_count` INT NOT NULL DEFAULT 0 COMMENT '统计期内帖子数',
+  `comment_count` INT NOT NULL DEFAULT 0 COMMENT '统计期内获得的评论数',
+  `avg_engagement_depth` DECIMAL(6,4) NOT NULL DEFAULT 0.0000 COMMENT '平均互动深度（评论链平均层级）',
+  `sentiment_change_rate` DECIMAL(6,4) NOT NULL DEFAULT 0.0000 COMMENT '情感改变率（能够改变他人情感的比例，0-1）',
+  `calculation_date` DATE NOT NULL COMMENT '计算日期',
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_user_date` (`user_id`, `calculation_date`),
+  KEY `idx_influence_score` (`influence_score`),
+  KEY `idx_positive_impact` (`positive_impact`),
+  KEY `idx_controversial_score` (`controversial_score`),
+  KEY `idx_calculation_date` (`calculation_date`),
+  CONSTRAINT `fk_influence_user` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='用户情感影响力评分表';
+
+-- ============================================
+-- 9. 情感共鸣关系表 (sentiment_resonance)
+-- Sprint 1.4: 情感共鸣网络图模块
+-- ============================================
+DROP TABLE IF EXISTS `sentiment_resonance`;
+CREATE TABLE `sentiment_resonance` (
+  `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '共鸣关系ID',
+  `user_a_id` BIGINT NOT NULL COMMENT '用户A的ID（user_a_id < user_b_id，避免重复）',
+  `user_b_id` BIGINT NOT NULL COMMENT '用户B的ID',
+  `resonance_score` DECIMAL(6,4) NOT NULL DEFAULT 0.0000 COMMENT '共鸣分数（0-1，基于余弦相似度）',
+  `interaction_count` INT NOT NULL DEFAULT 0 COMMENT '互动次数（评论、点赞等）',
+  `sentiment_similarity` DECIMAL(6,4) NOT NULL DEFAULT 0.0000 COMMENT '情感相似度（0-1）',
+  `avg_sentiment_diff` DECIMAL(6,4) NOT NULL DEFAULT 0.0000 COMMENT '平均情感差异',
+  `common_emotion_label` VARCHAR(20) DEFAULT NULL COMMENT '共同主导情感标签（POSITIVE/NEUTRAL/NEGATIVE）',
+  `community_id` INT DEFAULT NULL COMMENT '所属情感社区ID（Louvain算法发现）',
+  `calculation_date` DATE NOT NULL COMMENT '计算日期',
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_users_date` (`user_a_id`, `user_b_id`, `calculation_date`),
+  KEY `idx_user_a` (`user_a_id`),
+  KEY `idx_user_b` (`user_b_id`),
+  KEY `idx_resonance_score` (`resonance_score`),
+  KEY `idx_community_id` (`community_id`),
+  KEY `idx_calculation_date` (`calculation_date`),
+  CONSTRAINT `fk_resonance_user_a` FOREIGN KEY (`user_a_id`) REFERENCES `user` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_resonance_user_b` FOREIGN KEY (`user_b_id`) REFERENCES `user` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `chk_user_order` CHECK (`user_a_id` < `user_b_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='情感共鸣关系表';
+
+-- ============================================
 -- 插入测试数据
 -- ============================================
 
