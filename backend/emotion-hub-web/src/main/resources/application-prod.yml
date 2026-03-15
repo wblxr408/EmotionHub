@@ -1,0 +1,140 @@
+# EmotionHub 后端配置文件 - 生产环境
+spring:
+  application:
+    name: emotion-hub
+
+  # 数据源配置
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://mysql:3306/emotion_hub?useUnicode=true&characterEncoding=utf8&useSSL=true&serverTimezone=Asia/Shanghai
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD}
+    hikari:
+      minimum-idle: 10
+      maximum-pool-size: 50
+      idle-timeout: 300000
+      connection-timeout: 20000
+      max-lifetime: 1200000
+
+  # Redis配置
+  data:
+    redis:
+      host: ${REDIS_HOST:redis}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      database: 0
+      timeout: 5000ms
+      lettuce:
+        pool:
+          max-active: 50
+          max-idle: 20
+          min-idle: 10
+          max-wait: 2000ms
+
+  # 文件上传配置
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 10MB
+      max-request-size: 50MB
+
+  # Jackson配置
+  jackson:
+    time-zone: GMT+8
+    date-format: yyyy-MM-dd HH:mm:ss
+    serialization:
+      write-dates-as-timestamps: false
+    default-property-inclusion: non_null
+
+# MyBatis-Plus配置
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl
+  global-config:
+    db-config:
+      id-type: auto
+      logic-delete-field: deleted
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+  mapper-locations: classpath*:/mapper/**/*.xml
+
+# JWT配置
+jwt:
+  secret: ${JWT_SECRET}
+  expiration: 604800000
+  header: Authorization
+  prefix: Bearer
+
+# LLM配置
+llm:
+  openai:
+    enabled: ${LLM_OPENAI_ENABLED:false}
+    api-key: ${LLM_OPENAI_KEY}
+    api-url: https://api.openai.com/v1/chat/completions
+    model: gpt-3.5-turbo
+    timeout: 30000
+
+  qianwen:
+    enabled: ${LLM_QIANWEN_ENABLED:true}
+    api-key: ${LLM_QIANWEN_KEY}
+    api-url: https://dashscope.aliyuncs.com/api/v1/services/aigc/text-generation/generation
+    model: qwen-turbo
+    timeout: 30000
+
+  scheduler:
+    strategy: round-robin
+    enable-fallback: true
+    max-retries: 2
+    cache-enabled: true
+    cache-ttl: 86400
+    rate-limit: 100
+
+# 异步线程池配置
+async:
+  executor:
+    core-pool-size: 10
+    max-pool-size: 50
+    queue-capacity: 200
+    thread-name-prefix: emotion-async-
+    keep-alive-seconds: 60
+
+# 定时任务配置
+schedule:
+  emotion-stats:
+    cron: 0 0 1 * * ?
+
+# 日志配置
+logging:
+  level:
+    root: INFO
+    com.emotionhub: INFO
+  pattern:
+    console: '%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{50} - %msg%n'
+  file:
+    name: /var/log/emotion-hub/emotion-hub.log
+    max-size: 50MB
+    max-history: 30
+
+# 服务器配置
+server:
+  port: 8080
+  servlet:
+    context-path: /api
+  compression:
+    enabled: true
+    mime-types: application/json,application/xml,text/html,text/xml,text/plain
+
+# Actuator监控配置
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: when-authorized
+
+# Swagger/Knife4j配置
+knife4j:
+  enable: false  # 生产环境关闭API文档
