@@ -64,19 +64,21 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         // 公开接口（无需认证）
                         .requestMatchers(
-                                "/api/auth/**",           // 认证接口
-                                "/api/test/**",           // 测试接口
-                                "/doc.html",              // Knife4j文档
-                                "/swagger-ui/**",         // Swagger UI
-                                "/v3/api-docs/**",        // OpenAPI文档
-                                "/swagger-resources/**",  // Swagger资源
-                                "/webjars/**",            // 静态资源
+                                "/auth/**",
+                                "/api/auth/**",
+                                "/test/**",
+                                "/api/test/**",
+                                "/doc.html",
+                                "/swagger-ui/**",
+                                "/v3/api-docs/**",
+                                "/swagger-resources/**",
+                                "/webjars/**",
                                 "/favicon.ico",
                                 "/error"
                         ).permitAll()
 
-                        // 管理员接口（需要ADMIN角色）
-                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/admin/**", "/api/admin/**").hasRole("ADMIN")
+
 
                         // 其他所有接口都需要认证
                         .anyRequest().authenticated()
