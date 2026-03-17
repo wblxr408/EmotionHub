@@ -76,4 +76,11 @@ public class Comment {
      */
     @TableField(value = "updated_at", fill = FieldFill.INSERT_UPDATE)
     private LocalDateTime updatedAt;
+
+    /**
+     * 是否已删除: false-未删除, true-已删除
+     */
+    @TableField("deleted")
+    private Boolean deleted;
+
 }
