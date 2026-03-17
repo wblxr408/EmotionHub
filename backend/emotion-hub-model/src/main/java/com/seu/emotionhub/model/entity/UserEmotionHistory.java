@@ -1,4 +1,4 @@
-package com.emotionhub.model.entity;
+package com.seu.emotionhub.model.entity;
 
 import lombok.Data;
 import java.time.LocalDateTime;

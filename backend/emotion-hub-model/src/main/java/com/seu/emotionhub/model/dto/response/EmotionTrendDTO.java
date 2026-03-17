@@ -1,6 +1,6 @@
-package com.emotionhub.model.dto.response;
+package com.seu.emotionhub.model.dto.response;
 
-import com.emotionhub.model.enums.TrendTypeEnum;
+import com.seu.emotionhub.model.enums.TrendTypeEnum;
 import lombok.Data;
 
 /**

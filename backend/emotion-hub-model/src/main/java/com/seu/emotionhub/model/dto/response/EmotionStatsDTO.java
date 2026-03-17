@@ -1,4 +1,4 @@
-package com.emotionhub.model.dto.response;
+package com.seu.emotionhub.model.dto.response;
 
 import lombok.Data;
 

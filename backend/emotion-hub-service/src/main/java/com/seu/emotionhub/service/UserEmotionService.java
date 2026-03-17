@@ -1,8 +1,8 @@
-package com.emotionhub.service.impl;
+package com.seu.emotionhub.service;
 
-import com.emotionhub.model.dto.EmotionStatsDTO;
-import com.emotionhub.model.entity.UserEmotionHistory;
-import com.emotionhub.model.enums.EmotionStateEnum;
+import com.seu.emotionhub.model.dto.response.EmotionStatsDTO;
+import com.seu.emotionhub.model.entity.UserEmotionHistory;
+import com.seu.emotionhub.model.enums.EmotionStateEnum;
 
 import java.util.List;
 

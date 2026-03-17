@@ -1,4 +1,4 @@
-package com.emotionhub.model.enums;
+package com.seu.emotionhub.model.enums;
 
 import lombok.Getter;
 

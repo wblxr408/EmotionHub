@@ -1,4 +1,4 @@
-package com.emotionhub.service.event;
+package com.seu.emotionhub.service.event;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.event.EventListener;

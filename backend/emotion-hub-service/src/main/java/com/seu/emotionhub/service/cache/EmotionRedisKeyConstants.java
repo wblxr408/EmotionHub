@@ -1,4 +1,4 @@
-package com.emotionhub.service.cache;
+package com.seu.emotionhub.service.cache;
 /**
  * Redis Key常量（
  */

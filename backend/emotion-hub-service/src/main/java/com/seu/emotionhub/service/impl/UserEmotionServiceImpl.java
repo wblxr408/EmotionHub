@@ -1,21 +1,24 @@
-package com.emotionhub.service;
+package com.seu.emotionhub.service.impl;
 
 import cn.hutool.core.collection.CollectionUtil;
-import com.emotionhub.model.dto.EmotionStatsDTO;
-import com.emotionhub.model.entity.UserEmotionHistory;
-import com.emotionhub.model.enums.EmotionStateEnum;
-import com.emotionhub.model.enums.TrendTypeEnum;
-import com.emotionhub.service.UserEmotionService;
-import com.emotionhub.service.event.EmotionChangeEvent;
-import com.emotionhub.service.redis.EmotionRedisKeyConstants;
+import com.seu.emotionhub.model.dto.response.EmotionStatsDTO;
+import com.seu.emotionhub.model.entity.UserEmotionHistory;
+import com.seu.emotionhub.model.enums.EmotionStateEnum;
+import com.seu.emotionhub.model.enums.TrendTypeEnum;
+import com.seu.emotionhub.service.UserEmotionService;
+import com.seu.emotionhub.service.event.EmotionChangeEvent;
+import com.seu.emotionhub.service.cache.EmotionRedisKeyConstants;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationContext;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
 import java.util.*;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class UserEmotionServiceImpl implements UserEmotionService {
@@ -29,11 +32,11 @@ public class UserEmotionServiceImpl implements UserEmotionService {
         String stateKey = String.format(EmotionRedisKeyConstants.USER_EMOTION_STATE, history.getUserId());
 
         redisTemplate.opsForZSet().add(historyKey, history.getTimestamp().toString(), history.getSentimentScore());
-        redisTemplate.expire(historyKey, EmotionRedisKeyConstants.TTL_SECONDS);
+        redisTemplate.expire(historyKey, Duration.ofSeconds(EmotionRedisKeyConstants.TTL_SECONDS));
 
         EmotionStateEnum currentState = matchEmotionState(history.getUserId());
         redisTemplate.opsForValue().set(stateKey, currentState.getName());
-        redisTemplate.expire(stateKey, EmotionRedisKeyConstants.TTL_SECONDS);
+        redisTemplate.expire(stateKey, Duration.ofSeconds(EmotionRedisKeyConstants.TTL_SECONDS));
 
         applicationContext.publishEvent(new EmotionChangeEvent(history.getUserId(), currentState));
     }
@@ -51,16 +54,17 @@ public class UserEmotionServiceImpl implements UserEmotionService {
         long startTime = now - timeRange;
 
         String historyKey = String.format(EmotionRedisKeyConstants.USER_EMOTION_HISTORY, userId);
-        Set<String> timestampSet = redisTemplate.opsForZSet().rangeByScore(historyKey, -100, 100);
+        Set<Object> timestampSet = redisTemplate.opsForZSet().rangeByScore(historyKey, -100, 100);
         if (CollectionUtil.isEmpty(timestampSet)) {
             return new EmotionStatsDTO();
         }
 
         List<UserEmotionHistory> historyList = timestampSet.stream()
-                .map(timestampStr -> {
+                .map(timestampObj -> {
+                    String timestampStr = String.valueOf(timestampObj);
                     Long timestamp = Long.parseLong(timestampStr);
                     if (timestamp < startTime) return null;
-                    Double score = redisTemplate.opsForZSet().score(historyKey, timestampStr);
+                    Double score = redisTemplate.opsForZSet().score(historyKey, timestampObj);
                     UserEmotionHistory history = new UserEmotionHistory();
                     history.setUserId(userId);
                     history.setTimestamp(timestamp);
@@ -132,14 +136,15 @@ public class UserEmotionServiceImpl implements UserEmotionService {
 
     private List<Integer> getScoresInTimeRange(Long userId, Long startTime, Long endTime) {
         String historyKey = String.format(EmotionRedisKeyConstants.USER_EMOTION_HISTORY, userId);
-        Set<String> timestampSet = redisTemplate.opsForZSet().rangeByScore(historyKey, -100, 100);
+        Set<Object> timestampSet = redisTemplate.opsForZSet().rangeByScore(historyKey, -100, 100);
         if (CollectionUtil.isEmpty(timestampSet)) return Collections.emptyList();
 
         return timestampSet.stream()
-                .map(timestampStr -> {
+                .map(timestampObj -> {
+                    String timestampStr = String.valueOf(timestampObj);
                     Long timestamp = Long.parseLong(timestampStr);
                     if (timestamp >= startTime && timestamp <= endTime) {
-                        Double score = redisTemplate.opsForZSet().score(historyKey, timestampStr);
+                        Double score = redisTemplate.opsForZSet().score(historyKey, timestampObj);
                         return score.intValue();
                     }
                     return null;
@@ -151,14 +156,15 @@ public class UserEmotionServiceImpl implements UserEmotionService {
     @Override
     public List<UserEmotionHistory> getEmotionHistory(Long userId, Long startTime, Long endTime) {
         String historyKey = String.format(EmotionRedisKeyConstants.USER_EMOTION_HISTORY, userId);
-        Set<String> timestampSet = redisTemplate.opsForZSet().rangeByScore(historyKey, -100, 100);
+        Set<Object> timestampSet = redisTemplate.opsForZSet().rangeByScore(historyKey, -100, 100);
         if (CollectionUtil.isEmpty(timestampSet)) return Collections.emptyList();
 
         return timestampSet.stream()
-                .map(timestampStr -> {
+                .map(timestampObj -> {
+                    String timestampStr = String.valueOf(timestampObj);
                     Long timestamp = Long.parseLong(timestampStr);
                     if (timestamp >= startTime && timestamp <= endTime) {
-                        Double score = redisTemplate.opsForZSet().score(historyKey, timestampStr);
+                        Double score = redisTemplate.opsForZSet().score(historyKey, timestampObj);
                         UserEmotionHistory history = new UserEmotionHistory();
                         history.setUserId(userId);
                         history.setTimestamp(timestamp);

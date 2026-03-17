@@ -1,6 +1,6 @@
-package com.emotionhub.service.event;
+package com.seu.emotionhub.service.event;
 
-import com.emotionhub.model.enums.EmotionStateEnum;
+import com.seu.emotionhub.model.enums.EmotionStateEnum;
 import org.springframework.context.ApplicationEvent;
 
 /**
