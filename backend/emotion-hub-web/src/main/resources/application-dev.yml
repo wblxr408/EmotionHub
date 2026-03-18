@@ -3,16 +3,14 @@
 
 spring:
   application:
-    name: emotion-hub
+    name: EmotionHub
   flyway:
-    locations:
-      - classpath:db/migration
-      - classpath:db/test
+    enabled: false
     clean-disabled: false
   # 数据源配置
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://localhost:3306/emotionhub?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+    url: jdbc:mysql://localhost:3306/emotion_hub?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
     username: root
     password: 123456
     # Hikari连接池配置
@@ -68,7 +66,7 @@ mybatis-plus:
 
 # JWT配置
 jwt:
-  secret: EmotionHub_Secret_Key_2024_Change_This_In_Production
+  secret: EmotionHub_Secret_Key_2024_Change_This_In_Production_Must_Be_Long_Enough_For_HS512_Algorithm_Minimum_64_Characters
   expiration: 604800000  # 7天（毫秒）
   header: Authorization
   prefix: Bearer

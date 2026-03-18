@@ -13,6 +13,7 @@ import com.seu.emotionhub.model.entity.User;
 import com.seu.emotionhub.model.enums.EmotionLabel;
 import com.seu.emotionhub.model.enums.PostStatus;
 import com.seu.emotionhub.service.StatsService;
+import com.seu.emotionhub.service.cache.CacheService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
@@ -22,6 +23,7 @@ import org.springframework.stereotype.Service;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 /**
  * 统计服务实现类
@@ -37,9 +39,16 @@ public class StatsServiceImpl implements StatsService {
     private final PostMapper postMapper;
     private final CommentMapper commentMapper;
     private final LikeRecordMapper likeRecordMapper;
+    private final CacheService cacheService;
 
     @Override
     public Map<String, Object> getUserStats(Long userId) {
+        String cacheKey = CacheService.CacheKey.STATS_USER + userId;
+        Map<String, Object> cached = cacheService.get(cacheKey, Map.class);
+        if (cached != null && !cached.isEmpty()) {
+            return cached;
+        }
+
         Map<String, Object> stats = new HashMap<>();
 
         // 用户基本信息
@@ -99,11 +108,18 @@ public class StatsServiceImpl implements StatsService {
                 "neutral", neutralCount
         ));
 
+        cacheService.set(cacheKey, stats, CacheService.CacheTTL.STATS, TimeUnit.SECONDS);
         return stats;
     }
 
     @Override
     public Map<String, Object> getPlatformStats() {
+        String cacheKey = CacheService.CacheKey.STATS_PLATFORM;
+        Map<String, Object> cached = cacheService.get(cacheKey, Map.class);
+        if (cached != null && !cached.isEmpty()) {
+            return cached;
+        }
+
         Map<String, Object> stats = new HashMap<>();
 
         // 总用户数
@@ -143,6 +159,7 @@ public class StatsServiceImpl implements StatsService {
                 "neutral", neutralCount
         ));
 
+        cacheService.set(cacheKey, stats, CacheService.CacheTTL.STATS, TimeUnit.SECONDS);
         return stats;
     }
 

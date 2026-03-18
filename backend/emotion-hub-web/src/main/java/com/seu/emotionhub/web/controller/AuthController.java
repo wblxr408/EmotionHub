@@ -1,6 +1,7 @@
 package com.seu.emotionhub.web.controller;
 
 import com.seu.emotionhub.common.result.Result;
+import com.seu.emotionhub.common.annotation.RateLimit;
 import com.seu.emotionhub.model.dto.request.UserLoginRequest;
 import com.seu.emotionhub.model.dto.request.UserRegisterRequest;
 import com.seu.emotionhub.model.dto.response.UserInfoVO;
@@ -35,6 +36,7 @@ public class AuthController {
      */
     @PostMapping("/register")
     @Operation(summary = "用户注册", description = "注册新用户账号")
+    @RateLimit(limitType = RateLimit.LimitType.IP, period = 60, count = 10, message = "注册过于频繁，请稍后再试")
     public Result<Map<String, Object>> register(@Valid @RequestBody UserRegisterRequest request) {
         log.info("用户注册请求: username={}", request.getUsername());
         UserInfoVO userInfo = userService.register(request);
@@ -58,12 +60,13 @@ public class AuthController {
      */
     @PostMapping("/login")
     @Operation(summary = "用户登录", description = "用户登录并获取Token")
+    @RateLimit(limitType = RateLimit.LimitType.IP, period = 60, count = 20, message = "登录过于频繁，请稍后再试")
     public Result<Map<String, Object>> login(@Valid @RequestBody UserLoginRequest request) {
         log.info("用户登录请求: username={}", request.getUsername());
         String token = userService.login(request);
 
-        // 获取用户信息
-        UserInfoVO userInfo = userService.getCurrentUser();
+        // 首次登录时请求上下文里尚未注入本次token，因此按用户名查询用户信息
+        UserInfoVO userInfo = userService.getUserByUsername(request.getUsername());
 
         // 组装返回数据
         Map<String, Object> data = new HashMap<>();
@@ -100,6 +103,7 @@ public class AuthController {
      */
     @PostMapping("/change-password")
     @Operation(summary = "修改密码", description = "修改当前用户密码")
+    @RateLimit(limitType = RateLimit.LimitType.USER, period = 300, count = 5, message = "操作过于频繁，请稍后再试")
     public Result<Void> changePassword(@RequestParam String oldPassword,
                                         @RequestParam String newPassword) {
         log.info("修改密码请求");

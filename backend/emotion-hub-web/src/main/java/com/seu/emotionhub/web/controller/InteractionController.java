@@ -1,6 +1,7 @@
 package com.seu.emotionhub.web.controller;
 
 import com.seu.emotionhub.common.result.Result;
+import com.seu.emotionhub.common.annotation.RateLimit;
 import com.seu.emotionhub.model.dto.request.CommentCreateRequest;
 import com.seu.emotionhub.model.dto.request.LikeRequest;
 import com.seu.emotionhub.model.dto.response.CommentVO;
@@ -36,6 +37,7 @@ public class InteractionController {
      */
     @PostMapping("/like")
     @Operation(summary = "点赞/取消点赞", description = "点赞或取消点赞帖子/评论（幂等操作）")
+    @RateLimit(limitType = RateLimit.LimitType.USER, period = 60, count = 60, message = "点赞过于频繁，请稍后再试")
     public Result<Map<String, Object>> toggleLike(@Valid @RequestBody LikeRequest request) {
         log.info("点赞请求: targetId={}, targetType={}", request.getTargetId(), request.getTargetType());
         boolean liked = interactionService.toggleLike(request.getTargetId(), request.getTargetType());
@@ -65,6 +67,7 @@ public class InteractionController {
      */
     @PostMapping("/comment")
     @Operation(summary = "发表评论", description = "对帖子发表评论或回复其他评论")
+    @RateLimit(limitType = RateLimit.LimitType.USER, period = 60, count = 30, message = "评论过于频繁，请稍后再试")
     public Result<CommentVO> createComment(@Valid @RequestBody CommentCreateRequest request) {
         log.info("发表评论: postId={}, parentId={}", request.getPostId(), request.getParentId());
         CommentVO comment = interactionService.createComment(request);

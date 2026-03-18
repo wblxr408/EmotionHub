@@ -291,7 +291,7 @@ public class UserInfluenceServiceImpl implements UserInfluenceService {
         postWrapper.eq(Post::getUserId, userId)
                 .ge(Post::getCreatedAt, startDate.atStartOfDay())
                 .lt(Post::getCreatedAt, endDate.plusDays(1).atStartOfDay())
-                .eq(Post::getDeleted, false);
+                .eq(Post::getStatus, "PUBLISHED");
         List<Post> posts = postMapper.selectList(postWrapper);
 
         if (posts.isEmpty()) {
@@ -302,8 +302,7 @@ public class UserInfluenceServiceImpl implements UserInfluenceService {
 
         // 获取所有评论
         LambdaQueryWrapper<Comment> commentWrapper = new LambdaQueryWrapper<>();
-        commentWrapper.in(Comment::getPostId, postIds)
-                .eq(Comment::getDeleted, false);
+        commentWrapper.in(Comment::getPostId, postIds);
         List<Comment> comments = commentMapper.selectList(commentWrapper);
 
         if (comments.isEmpty()) {
@@ -335,7 +334,7 @@ public class UserInfluenceServiceImpl implements UserInfluenceService {
         postWrapper.eq(Post::getUserId, userId)
                 .ge(Post::getCreatedAt, startDate.atStartOfDay())
                 .lt(Post::getCreatedAt, endDate.plusDays(1).atStartOfDay())
-                .eq(Post::getDeleted, false);
+                .eq(Post::getStatus, "PUBLISHED");
         List<Post> posts = postMapper.selectList(postWrapper);
 
         if (posts.isEmpty()) {
@@ -347,7 +346,6 @@ public class UserInfluenceServiceImpl implements UserInfluenceService {
         // 获取所有评论
         LambdaQueryWrapper<Comment> commentWrapper = new LambdaQueryWrapper<>();
         commentWrapper.in(Comment::getPostId, postIds)
-                .eq(Comment::getDeleted, false)
                 .isNotNull(Comment::getEmotionScore);
         List<Comment> comments = commentMapper.selectList(commentWrapper);
 
@@ -381,7 +379,7 @@ public class UserInfluenceServiceImpl implements UserInfluenceService {
         postWrapper.eq(Post::getUserId, userId)
                 .ge(Post::getCreatedAt, startDate.atStartOfDay())
                 .lt(Post::getCreatedAt, endDate.plusDays(1).atStartOfDay())
-                .eq(Post::getDeleted, false);
+                .eq(Post::getStatus, "PUBLISHED");
         List<Post> posts = postMapper.selectList(postWrapper);
 
         if (posts.isEmpty()) {
@@ -392,8 +390,7 @@ public class UserInfluenceServiceImpl implements UserInfluenceService {
 
         // 获取所有评论
         LambdaQueryWrapper<Comment> commentWrapper = new LambdaQueryWrapper<>();
-        commentWrapper.in(Comment::getPostId, postIds)
-                .eq(Comment::getDeleted, false);
+        commentWrapper.in(Comment::getPostId, postIds);
         List<Comment> comments = commentMapper.selectList(commentWrapper);
 
         if (comments.isEmpty()) {
@@ -448,7 +445,7 @@ public class UserInfluenceServiceImpl implements UserInfluenceService {
         postWrapper.eq(Post::getUserId, userId)
                 .ge(Post::getCreatedAt, startDate.atStartOfDay())
                 .lt(Post::getCreatedAt, endDate.plusDays(1).atStartOfDay())
-                .eq(Post::getDeleted, false)
+                .eq(Post::getStatus, "PUBLISHED")
                 .isNotNull(Post::getEmotionLabel);
         List<Post> posts = postMapper.selectList(postWrapper);
 
@@ -463,7 +460,6 @@ public class UserInfluenceServiceImpl implements UserInfluenceService {
         for (Post post : posts) {
             LambdaQueryWrapper<Comment> commentWrapper = new LambdaQueryWrapper<>();
             commentWrapper.eq(Comment::getPostId, post.getId())
-                    .eq(Comment::getDeleted, false)
                     .isNotNull(Comment::getEmotionLabel);
             List<Comment> comments = commentMapper.selectList(commentWrapper);
 
@@ -496,7 +492,7 @@ public class UserInfluenceServiceImpl implements UserInfluenceService {
         postWrapper.in(Post::getUserId, users)
                 .ge(Post::getCreatedAt, startDate.atStartOfDay())
                 .lt(Post::getCreatedAt, endDate.plusDays(1).atStartOfDay())
-                .eq(Post::getDeleted, false);
+                .eq(Post::getStatus, "PUBLISHED");
         List<Post> posts = postMapper.selectList(postWrapper);
 
         if (posts.isEmpty()) {
@@ -511,8 +507,7 @@ public class UserInfluenceServiceImpl implements UserInfluenceService {
 
         // 获取所有评论
         LambdaQueryWrapper<Comment> commentWrapper = new LambdaQueryWrapper<>();
-        commentWrapper.in(Comment::getPostId, postIds)
-                .eq(Comment::getDeleted, false);
+        commentWrapper.in(Comment::getPostId, postIds);
         List<Comment> comments = commentMapper.selectList(commentWrapper);
 
         // 构建图
@@ -536,7 +531,7 @@ public class UserInfluenceServiceImpl implements UserInfluenceService {
         LambdaQueryWrapper<Post> wrapper = new LambdaQueryWrapper<>();
         wrapper.ge(Post::getCreatedAt, startDate.atStartOfDay())
                 .lt(Post::getCreatedAt, endDate.plusDays(1).atStartOfDay())
-                .eq(Post::getDeleted, false)
+                .eq(Post::getStatus, "PUBLISHED")
                 .select(Post::getUserId);
 
         return postMapper.selectList(wrapper).stream()
@@ -554,7 +549,7 @@ public class UserInfluenceServiceImpl implements UserInfluenceService {
         postWrapper.eq(Post::getUserId, userId)
                 .ge(Post::getCreatedAt, startDate.atStartOfDay())
                 .lt(Post::getCreatedAt, endDate.plusDays(1).atStartOfDay())
-                .eq(Post::getDeleted, false);
+                .eq(Post::getStatus, "PUBLISHED");
         int postCount = Math.toIntExact(postMapper.selectCount(postWrapper));
 
         // 统计获得的评论数
@@ -565,8 +560,7 @@ public class UserInfluenceServiceImpl implements UserInfluenceService {
         int commentCount = 0;
         if (!postIds.isEmpty()) {
             LambdaQueryWrapper<Comment> commentWrapper = new LambdaQueryWrapper<>();
-            commentWrapper.in(Comment::getPostId, postIds)
-                    .eq(Comment::getDeleted, false);
+            commentWrapper.in(Comment::getPostId, postIds);
             commentCount = Math.toIntExact(commentMapper.selectCount(commentWrapper));
         }
 

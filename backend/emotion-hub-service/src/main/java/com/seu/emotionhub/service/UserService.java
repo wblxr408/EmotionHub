@@ -43,6 +43,14 @@ public interface UserService {
     UserInfoVO getUserById(Long userId);
 
     /**
+     * 根据用户名获取用户信息
+     *
+     * @param username 用户名
+     * @return 用户信息
+     */
+    UserInfoVO getUserByUsername(String username);
+
+    /**
      * 修改密码
      *
      * @param oldPassword 旧密码

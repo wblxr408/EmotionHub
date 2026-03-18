@@ -8,7 +8,7 @@ services:
     restart: always
     environment:
       MYSQL_ROOT_PASSWORD: 123456
-      MYSQL_DATABASE: emotionhub
+      MYSQL_DATABASE: emotion_hub
       MYSQL_USER: emotionhub
       MYSQL_PASSWORD: 123456
     ports:
@@ -22,7 +22,7 @@ services:
 
   # Redis缓存
   redis:
-    image: redis:6-alpine
+    image: redis:7-alpine
     container_name: emotionhub-redis
     restart: always
     ports:

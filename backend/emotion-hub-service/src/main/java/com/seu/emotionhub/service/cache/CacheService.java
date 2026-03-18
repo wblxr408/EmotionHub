@@ -63,6 +63,7 @@ public class CacheService {
         public static final String POST_HOT = "post:hot";
         public static final String USER_INFO = "user:info:";
         public static final String STATS_USER = "stats:user:";
+        public static final String STATS_PLATFORM = "stats:platform";
         public static final String EMOTION_TREND = "emotion:trend:";
         public static final String RATE_LIMIT = "rate:limit:";
     }
