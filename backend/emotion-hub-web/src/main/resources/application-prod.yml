@@ -90,6 +90,15 @@ llm:
     cache-ttl: 86400
     rate-limit: 100
 
+# 通义千问API配置（与QwenEmotionAnalysisServiceImpl一致）
+dashscope:
+  api-key: ${DASHSCOPE_API_KEY:}
+
+# 情感分析配置
+emotion:
+  analysis:
+    provider: ${EMOTION_PROVIDER:qwen}  # keyword/qwen
+
 # 异步线程池配置
 async:
   executor:

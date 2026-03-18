@@ -82,10 +82,11 @@ public class HotPostCacheService {
                     .last("LIMIT 100")
             );
 
-            // 更新热门排行榜
+            // 更新热门排行榜（重建，避免分数被重复累加）
+            redisTemplate.delete(HOT_POST_RANKING);
             hotPosts.forEach(post -> {
                 double score = calculateHotScore(post);
-                cacheService.incrHotScore(HOT_POST_RANKING, String.valueOf(post.getId()), score);
+                redisTemplate.opsForZSet().add(HOT_POST_RANKING, String.valueOf(post.getId()), score);
             });
 
             // 预热热门帖子详情

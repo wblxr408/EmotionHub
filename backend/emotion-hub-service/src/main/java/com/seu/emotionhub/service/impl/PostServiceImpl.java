@@ -15,6 +15,8 @@ import com.seu.emotionhub.model.entity.User;
 import com.seu.emotionhub.model.enums.PostStatus;
 import com.seu.emotionhub.service.EmotionAnalysisService;
 import com.seu.emotionhub.service.PostService;
+import com.seu.emotionhub.service.cache.CacheService;
+import com.seu.emotionhub.service.cache.HotPostCacheService;
 import com.alibaba.fastjson2.JSON;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -26,6 +28,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -41,6 +44,8 @@ public class PostServiceImpl implements PostService {
     private final PostMapper postMapper;
     private final UserMapper userMapper;
     private final EmotionAnalysisService emotionAnalysisService;
+    private final CacheService cacheService;
+    private final HotPostCacheService hotPostCacheService;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -125,7 +130,15 @@ public class PostServiceImpl implements PostService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public PostVO getPostDetail(Long postId) {
-        Post post = postMapper.selectById(postId);
+        String cacheKey = CacheService.CacheKey.POST_DETAIL + postId;
+        Post post = cacheService.get(cacheKey, Post.class);
+        if (post == null) {
+            post = postMapper.selectById(postId);
+            if (post != null) {
+                cacheService.setWithBloom(cacheKey, post, CacheService.CacheTTL.POST_DETAIL, TimeUnit.SECONDS);
+            }
+        }
+
         if (post == null) {
             throw new BusinessException(ErrorCode.POST_NOT_FOUND);
         }
@@ -135,8 +148,10 @@ public class PostServiceImpl implements PostService {
         }
 
         // 浏览量+1
+        postMapper.incrementViewCount(postId, 1);
         post.setViewCount(post.getViewCount() + 1);
-        postMapper.updateById(post);
+        cacheService.set(cacheKey, post, CacheService.CacheTTL.POST_DETAIL, TimeUnit.SECONDS);
+        hotPostCacheService.updateHotScore(postId, "view");
 
         return convertToPostVO(post);
     }
@@ -165,6 +180,7 @@ public class PostServiceImpl implements PostService {
         }
 
         log.info("用户删除帖子: userId={}, postId={}", userId, postId);
+        hotPostCacheService.invalidatePostCache(postId);
     }
 
     @Override

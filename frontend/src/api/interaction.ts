@@ -82,3 +82,6 @@ export function deleteComment(commentId: number) {
     method: 'delete'
   })
 }
+
+export const likePost = toggleLike
+export const getComments = listComments

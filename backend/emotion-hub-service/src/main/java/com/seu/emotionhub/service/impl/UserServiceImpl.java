@@ -12,6 +12,7 @@ import com.seu.emotionhub.model.entity.User;
 import com.seu.emotionhub.model.enums.UserRole;
 import com.seu.emotionhub.model.enums.UserStatus;
 import com.seu.emotionhub.service.UserService;
+import com.seu.emotionhub.service.cache.CacheService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
@@ -20,6 +21,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.concurrent.TimeUnit;
 
 /**
  * 用户服务实现类
@@ -34,6 +37,7 @@ public class UserServiceImpl implements UserService {
     private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
+    private final CacheService cacheService;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -70,7 +74,10 @@ public class UserServiceImpl implements UserService {
         log.info("用户注册成功: userId={}, username={}", user.getId(), user.getUsername());
 
         // 5. 返回用户信息
-        return convertToUserInfoVO(user);
+        UserInfoVO vo = convertToUserInfoVO(user);
+        cacheService.set(CacheService.CacheKey.USER_INFO + user.getId(), vo,
+                CacheService.CacheTTL.USER_INFO, TimeUnit.SECONDS);
+        return vo;
     }
 
     @Override
@@ -110,11 +117,30 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public UserInfoVO getUserById(Long userId) {
+        String cacheKey = CacheService.CacheKey.USER_INFO + userId;
+        UserInfoVO cached = cacheService.get(cacheKey, UserInfoVO.class);
+        if (cached != null) {
+            return cached;
+        }
+
         User user = userMapper.selectById(userId);
         if (user == null) {
             throw new BusinessException(ErrorCode.USER_NOT_FOUND);
         }
-        return convertToUserInfoVO(user);
+        UserInfoVO vo = convertToUserInfoVO(user);
+        cacheService.set(cacheKey, vo, CacheService.CacheTTL.USER_INFO, TimeUnit.SECONDS);
+        return vo;
+    }
+
+    @Override
+    public UserInfoVO getUserByUsername(String username) {
+        LambdaQueryWrapper<User> query = new LambdaQueryWrapper<>();
+        query.eq(User::getUsername, username);
+        User user = userMapper.selectOne(query);
+        if (user == null) {
+            throw new BusinessException(ErrorCode.USER_NOT_FOUND);
+        }
+        return getUserById(user.getId());
     }
 
     @Override
@@ -141,6 +167,7 @@ public class UserServiceImpl implements UserService {
         }
 
         log.info("用户修改密码成功: userId={}", userId);
+        cacheService.delete(CacheService.CacheKey.USER_INFO + userId);
     }
 
     /**

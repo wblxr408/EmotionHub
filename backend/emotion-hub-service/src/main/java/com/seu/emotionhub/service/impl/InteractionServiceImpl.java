@@ -17,6 +17,8 @@ import com.seu.emotionhub.model.enums.TargetType;
 import com.seu.emotionhub.service.InteractionService;
 import com.seu.emotionhub.service.NotificationService;
 import com.seu.emotionhub.service.SentimentPropagationService;
+import com.seu.emotionhub.service.cache.CacheService;
+import com.seu.emotionhub.service.cache.HotPostCacheService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
@@ -47,6 +49,8 @@ public class InteractionServiceImpl implements InteractionService {
     private final UserMapper userMapper;
     private final NotificationService notificationService;
     private final SentimentPropagationService sentimentPropagationService;
+    private final CacheService cacheService;
+    private final HotPostCacheService hotPostCacheService;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -72,6 +76,7 @@ public class InteractionServiceImpl implements InteractionService {
             likeRecordMapper.deleteById(existingLike.getId());
             updateLikeCount(targetId, targetType, -1);
             log.info("取消点赞: userId={}, targetId={}, targetType={}", userId, targetId, targetType);
+            refreshPostCacheIfNeeded(targetId, targetType, "like");
             return false;
         } else {
             // 未点赞，执行点赞
@@ -86,6 +91,7 @@ public class InteractionServiceImpl implements InteractionService {
             // 发送点赞通知
             sendLikeNotification(userId, targetId, targetType);
 
+            refreshPostCacheIfNeeded(targetId, targetType, "like");
             return true;
         }
     }
@@ -134,6 +140,7 @@ public class InteractionServiceImpl implements InteractionService {
         // 更新帖子评论数
         post.setCommentCount(post.getCommentCount() + 1);
         postMapper.updateById(post);
+        refreshPostCacheIfNeeded(post.getId(), TargetType.POST.getCode(), "comment");
 
         log.info("发表评论成功: userId={}, postId={}, commentId={}", userId, request.getPostId(), comment.getId());
 
@@ -192,9 +199,19 @@ public class InteractionServiceImpl implements InteractionService {
         if (post != null) {
             post.setCommentCount(Math.max(0, post.getCommentCount() - 1));
             postMapper.updateById(post);
+            refreshPostCacheIfNeeded(post.getId(), TargetType.POST.getCode(), null);
         }
 
         log.info("删除评论成功: userId={}, commentId={}", userId, commentId);
+    }
+
+    private void refreshPostCacheIfNeeded(Long targetId, String targetType, String action) {
+        if (TargetType.POST.getCode().equals(targetType)) {
+            cacheService.delete(CacheService.CacheKey.POST_DETAIL + targetId);
+            if (action != null) {
+                hotPostCacheService.updateHotScore(targetId, action);
+            }
+        }
     }
 
     @Override

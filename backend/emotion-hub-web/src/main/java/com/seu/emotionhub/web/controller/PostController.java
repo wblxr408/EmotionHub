@@ -1,6 +1,7 @@
 package com.seu.emotionhub.web.controller;
 
 import com.seu.emotionhub.common.result.Result;
+import com.seu.emotionhub.common.annotation.RateLimit;
 import com.seu.emotionhub.model.dto.request.PostCreateRequest;
 import com.seu.emotionhub.model.dto.request.PostQueryRequest;
 import com.seu.emotionhub.model.dto.response.PageResult;
@@ -33,6 +34,7 @@ public class PostController {
      */
     @PostMapping("/create")
     @Operation(summary = "发布帖子", description = "用户发布新帖子，系统将自动进行情感分析")
+    @RateLimit(limitType = RateLimit.LimitType.USER, period = 60, count = 5, message = "发帖过于频繁，请稍后再试")
     public Result<PostVO> createPost(@Valid @RequestBody PostCreateRequest request) {
         log.info("发布帖子请求: content length={}", request.getContent().length());
         PostVO post = postService.createPost(request);
