@@ -57,11 +57,11 @@
         <flyway.version>9.22.3</flyway.version>
 
         <!-- DataSource for Flyway and Spring Boot (can be overridden with -D) -->
-        <spring.datasource.url>
-            jdbc:mysql://localhost:3306/emotion_hub?useUnicode=true&amp;characterEncoding=utf8&amp;useSSL=false&amp;serverTimezone=Asia/Shanghai&amp;allowPublicKeyRetrieval=true</spring.datasource.url>
-        <spring.datasource.username>root</spring.datasource.username>
-        <spring.datasource.password>060506</spring.datasource.password>
-        <spring.datasource.driver-class-name>com.mysql.cj.jdbc.Driver</spring.datasource.driver-class-name>
+<!--        <spring.datasource.url>-->
+<!--            jdbc:mysql://localhost:3306/emotionhub?useUnicode=true&amp;characterEncoding=utf8&amp;useSSL=false&amp;serverTimezone=Asia/Shanghai&amp;allowPublicKeyRetrieval=true</spring.datasource.url>-->
+<!--        <spring.datasource.username>${env.EMOTIONHUB_DB_USERNAME_DEV}</spring.datasource.username>-->
+<!--        <spring.datasource.password>${env.EMOTIONHUB_DB_PASSWORD_DEV}</spring.datasource.password>-->
+<!--        <spring.datasource.driver-class-name>com.mysql.cj.jdbc.Driver</spring.datasource.driver-class-name>-->
         <!-- Flyway locations shared property so plugin and app can use same value -->
         <spring.flyway.locations>
             filesystem:${project.basedir}/emotion-hub-migration/src/main/resources/db/migration</spring.flyway.locations>
@@ -255,4 +255,3 @@
         </plugins>
     </build>
 </project>
-

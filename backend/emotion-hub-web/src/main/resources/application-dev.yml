@@ -10,9 +10,9 @@ spring:
   # 数据源配置
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://localhost:3306/emotion_hub?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
-    username: root
-    password: 123456
+    url: jdbc:mysql://localhost:3306/emotionhub?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+    username: ${EMOTIONHUB_DB_USERNAME_DEV:root}
+    password: ${EMOTIONHUB_DB_PASSWORD_DEV:123456}
     # Hikari连接池配置
     hikari:
       minimum-idle: 5
