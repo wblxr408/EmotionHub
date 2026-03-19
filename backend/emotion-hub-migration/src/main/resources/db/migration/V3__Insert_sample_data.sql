@@ -4,11 +4,11 @@
 
 -- 插入测试用户
 INSERT INTO `user` (`username`, `nickname`, `email`, `password`, `avatar`, `bio`, `created_at`, `updated_at`) VALUES
-('alice_chen', 'Alice Chen', 'alice@example.com', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z2EbtCBW6wCp6pwYzd3Gm0Zm', NULL, 'Passionate about sharing emotions and connecting with others through meaningful conversations.', NOW(), NOW()),
-('bob_wang', 'Bob Wang', 'bob@example.com', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z2EbtCBW6wCp6pwYzd3Gm0Zm', NULL, 'Tech enthusiast, coffee lover, and amateur philosopher. Always curious about human emotions.', NOW(), NOW()),
-('carol_liu', 'Carol Liu', 'carol@example.com', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z2EbtCBW6wCp6pwYzd3Gm0Zm', NULL, 'Writer and dreamer. Exploring the depths of human feelings through words.', NOW(), NOW()),
-('david_zhang', 'David Zhang', 'david@example.com', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z2EbtCBW6wCp6pwYzd3Gm0Zm', NULL, 'Data scientist by day, emotional explorer by night. Fascinated by the intersection of AI and human psychology.', NOW(), NOW()),
-('emma_li', 'Emma Li', 'emma@example.com', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z2EbtCBW6wCp6pwYzd3Gm0Zm', NULL, 'Artist and mindfulness practitioner. Painting emotions with words and colors.', NOW(), NOW());
+('alice_chen', 'Alice Chen', 'alice@example.com', '$2a$10$Zp2AGn7fWqj8NwBi9bBT4OWGWr5wIUQYrz/wHcj35/a4uBwLyOZHy', NULL, 'Passionate about sharing emotions and connecting with others through meaningful conversations.', NOW(), NOW()),
+('bob_wang', 'Bob Wang', 'bob@example.com', '$2a$10$Zp2AGn7fWqj8NwBi9bBT4OWGWr5wIUQYrz/wHcj35/a4uBwLyOZHy', NULL, 'Tech enthusiast, coffee lover, and amateur philosopher. Always curious about human emotions.', NOW(), NOW()),
+('carol_liu', 'Carol Liu', 'carol@example.com', '$2a$10$Zp2AGn7fWqj8NwBi9bBT4OWGWr5wIUQYrz/wHcj35/a4uBwLyOZHy', NULL, 'Writer and dreamer. Exploring the depths of human feelings through words.', NOW(), NOW()),
+('david_zhang', 'David Zhang', 'david@example.com', '$2a$10$Zp2AGn7fWqj8NwBi9bBT4OWGWr5wIUQYrz/wHcj35/a4uBwLyOZHy', NULL, 'Data scientist by day, emotional explorer by night. Fascinated by the intersection of AI and human psychology.', NOW(), NOW()),
+('emma_li', 'Emma Li', 'emma@example.com', '$2a$10$Zp2AGn7fWqj8NwBi9bBT4OWGWr5wIUQYrz/wHcj35/a4uBwLyOZHy', NULL, 'Artist and mindfulness practitioner. Painting emotions with words and colors.', NOW(), NOW());
 
 -- 注意：所有用户的密码都是 "password123"（已使用BCrypt加密）
 
@@ -109,3 +109,4 @@ INSERT INTO `notification` (`user_id`, `type`, `title`, `content`, `related_id`,
 
 (5, 'LIKE', 'New Like', 'Alice Chen liked your post', 10, 0, DATE_SUB(NOW(), INTERVAL 2 HOUR)),
 (5, 'COMMENT', 'New Comment', 'David Zhang commented on your post', 6, 1, DATE_SUB(NOW(), INTERVAL 6 HOUR));
+

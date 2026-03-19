@@ -1,12 +1,14 @@
 /**
  * Axios封装 - 统一请求拦截器
  */
-import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios'
+import axios, { AxiosInstance, AxiosResponse } from 'axios'
 import { ElMessage } from 'element-plus'
 
 // 创建axios实例
+const apiBaseURL = import.meta.env.VITE_API_BASE_URL || '/api'
+
 const service: AxiosInstance = axios.create({
-  baseURL: "http://localhost:8081/api",
+  baseURL: apiBaseURL,
   timeout: 15000,
   headers: {
     'Content-Type': 'application/json;charset=UTF-8'

@@ -12,7 +12,7 @@ services:
       MYSQL_USER: emotionhub
       MYSQL_PASSWORD: 123456
     ports:
-      - "3306:3306"
+      - "3307:3306"
     volumes:
       - mysql-data:/var/lib/mysql
     command:
