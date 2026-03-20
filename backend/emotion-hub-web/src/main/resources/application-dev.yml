@@ -10,8 +10,8 @@ spring:
   # 数据源配置
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://localhost:3306/emotionhub?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
-    username: ${EMOTIONHUB_DB_USERNAME_DEV:root}
+    url: jdbc:mysql://${EMOTIONHUB_DB_HOST_DEV:localhost}:${EMOTIONHUB_DB_PORT_DEV:3307}/${EMOTIONHUB_DB_NAME_DEV:emotion_hub}?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+    username: ${EMOTIONHUB_DB_USERNAME_DEV:emotionhub}
     password: ${EMOTIONHUB_DB_PASSWORD_DEV:123456}
     # Hikari连接池配置
     hikari:
@@ -24,9 +24,9 @@ spring:
   # Redis配置
   data:
     redis:
-      host: localhost
-      port: 6379
-      password:
+      host: ${EMOTIONHUB_REDIS_HOST_DEV:localhost}
+      port: ${EMOTIONHUB_REDIS_PORT_DEV:6379}
+      password: ${EMOTIONHUB_REDIS_PASSWORD_DEV:}
       database: 0
       timeout: 5000ms
       lettuce:
@@ -135,7 +135,7 @@ logging:
 
 # 服务器配置
 server:
-  port: 8081
+  port: ${EMOTIONHUB_SERVER_PORT_DEV:8080}
   servlet:
     context-path:
   compression:

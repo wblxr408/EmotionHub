@@ -9,7 +9,7 @@ const apiBaseURL = import.meta.env.VITE_API_BASE_URL || '/api'
 
 const service: AxiosInstance = axios.create({
   baseURL: apiBaseURL,
-  timeout: 15000,
+  timeout: 30000,
   headers: {
     'Content-Type': 'application/json;charset=UTF-8'
   }
@@ -55,7 +55,9 @@ service.interceptors.response.use(
   (error) => {
     console.error('Response Error:', error)
 
-    if (error.response) {
+    if (error.code === 'ECONNABORTED') {
+      ElMessage.error('请求超时，服务可能仍在启动中，请稍后重试')
+    } else if (error.response) {
       switch (error.response.status) {
         case 401:
           ElMessage.error('请先登录')
@@ -76,7 +78,7 @@ service.interceptors.response.use(
           ElMessage.error(error.response.data?.message || '请求失败')
       }
     } else if (error.request) {
-      ElMessage.error('网络连接失败，请检查网络')
+      ElMessage.error('网络连接失败，请检查前端代理或后端服务是否就绪')
     } else {
       ElMessage.error('请求配置错误')
     }

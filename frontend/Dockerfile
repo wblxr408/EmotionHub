@@ -7,8 +7,8 @@ WORKDIR /app
 # 复制package文件
 COPY package*.json ./
 
-# 安装依赖
-RUN npm ci --only=production
+# 构建阶段需要 devDependencies（vite、vue-tsc 等）
+RUN npm ci
 
 # 复制源代码
 COPY . .

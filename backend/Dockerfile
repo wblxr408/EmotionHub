@@ -10,6 +10,7 @@ COPY emotion-hub-model/pom.xml emotion-hub-model/
 COPY emotion-hub-dao/pom.xml emotion-hub-dao/
 COPY emotion-hub-service/pom.xml emotion-hub-service/
 COPY emotion-hub-web/pom.xml emotion-hub-web/
+COPY emotion-hub-migration/pom.xml emotion-hub-migration/
 
 # 下载依赖
 RUN mvn dependency:go-offline -B
@@ -20,6 +21,7 @@ COPY emotion-hub-model emotion-hub-model
 COPY emotion-hub-dao emotion-hub-dao
 COPY emotion-hub-service emotion-hub-service
 COPY emotion-hub-web emotion-hub-web
+COPY emotion-hub-migration emotion-hub-migration
 
 # 构建项目
 RUN mvn clean package -DskipTests -B

@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # MySQL数据库
   mysql:
@@ -15,10 +13,16 @@ services:
       - "3307:3306"
     volumes:
       - mysql-data:/var/lib/mysql
+      - ./database/mysql-init:/docker-entrypoint-initdb.d:ro
     command:
       - --character-set-server=utf8mb4
       - --collation-server=utf8mb4_unicode_ci
       - --default-authentication-plugin=mysql_native_password
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-p123456"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
 
   # Redis缓存
   redis:
@@ -30,6 +34,50 @@ services:
     volumes:
       - redis-data:/data
     command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: ./backend
+    container_name: emotionhub-backend
+    restart: always
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      DB_USERNAME: emotionhub
+      DB_PASSWORD: 123456
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      JWT_SECRET: EmotionHub_Secret_Key_2024_Change_This_In_Production_Must_Be_Long_Enough_For_HS512_Algorithm_Minimum_64_Characters
+      EMOTION_PROVIDER: keyword
+      LLM_QIANWEN_ENABLED: "false"
+    ports:
+      - "8080:8080"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8080/api/test/hello"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 25s
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: emotionhub-frontend
+    restart: always
+    ports:
+      - "3000:80"
+    depends_on:
+      backend:
+        condition: service_healthy
 
 volumes:
   mysql-data:

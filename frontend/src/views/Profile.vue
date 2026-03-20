@@ -26,15 +26,15 @@
         <!-- 统计信息 -->
         <div class="profile-stats">
           <div class="stat-item">
-            <div class="stat-value">{{ stats?.totalPosts || 0 }}</div>
+            <div class="stat-value">{{ statsSummary.totalPosts }}</div>
             <div class="meta">ENTRIES</div>
           </div>
           <div class="stat-item">
-            <div class="stat-value">{{ stats?.totalLikes || 0 }}</div>
+            <div class="stat-value">{{ statsSummary.totalLikes }}</div>
             <div class="meta">LIKES RECEIVED</div>
           </div>
           <div class="stat-item">
-            <div class="stat-value">{{ stats?.totalComments || 0 }}</div>
+            <div class="stat-value">{{ statsSummary.totalComments }}</div>
             <div class="meta">COMMENTS</div>
           </div>
         </div>
@@ -51,10 +51,10 @@
             <div class="emotion-bar">
               <div
                 class="emotion-fill positive"
-                :style="{ width: `${stats.positivePercent}%` }"
+                :style="{ width: `${statsSummary.positivePercent}%` }"
               ></div>
             </div>
-            <span class="meta">{{ stats.positivePercent.toFixed(1) }}%</span>
+            <span class="meta">{{ statsSummary.positivePercent.toFixed(1) }}%</span>
           </div>
 
           <div class="emotion-item">
@@ -62,10 +62,10 @@
             <div class="emotion-bar">
               <div
                 class="emotion-fill neutral"
-                :style="{ width: `${stats.neutralPercent}%` }"
+                :style="{ width: `${statsSummary.neutralPercent}%` }"
               ></div>
             </div>
-            <span class="meta">{{ stats.neutralPercent.toFixed(1) }}%</span>
+            <span class="meta">{{ statsSummary.neutralPercent.toFixed(1) }}%</span>
           </div>
 
           <div class="emotion-item">
@@ -73,10 +73,10 @@
             <div class="emotion-bar">
               <div
                 class="emotion-fill negative"
-                :style="{ width: `${stats.negativePercent}%` }"
+                :style="{ width: `${statsSummary.negativePercent}%` }"
               ></div>
             </div>
-            <span class="meta">{{ stats.negativePercent.toFixed(1) }}%</span>
+            <span class="meta">{{ statsSummary.negativePercent.toFixed(1) }}%</span>
           </div>
         </div>
       </div>
@@ -144,6 +144,33 @@ const userInfo = ref<UserInfo | null>(null)
 const stats = ref<UserStats | null>(null)
 const posts = ref<Post[]>([])
 const loadingPosts = ref(false)
+
+const statsSummary = computed(() => {
+  if (!stats.value) {
+    return {
+      totalPosts: 0,
+      totalComments: 0,
+      totalLikes: 0,
+      positivePercent: 0,
+      neutralPercent: 0,
+      negativePercent: 0
+    }
+  }
+
+  const positive = Number(stats.value.emotionStats?.positive || 0)
+  const neutral = Number(stats.value.emotionStats?.neutral || 0)
+  const negative = Number(stats.value.emotionStats?.negative || 0)
+  const totalEmotionCount = positive + neutral + negative
+
+  return {
+    totalPosts: Number(stats.value.postCount || 0),
+    totalComments: Number(stats.value.commentCount || 0),
+    totalLikes: Number(stats.value.totalLikes || 0),
+    positivePercent: totalEmotionCount > 0 ? (positive / totalEmotionCount) * 100 : 0,
+    neutralPercent: totalEmotionCount > 0 ? (neutral / totalEmotionCount) * 100 : 0,
+    negativePercent: totalEmotionCount > 0 ? (negative / totalEmotionCount) * 100 : 0
+  }
+})
 
 const userId = computed(() => {
   const id = route.params.id

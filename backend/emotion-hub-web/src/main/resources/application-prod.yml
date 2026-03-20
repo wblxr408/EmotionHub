@@ -129,7 +129,7 @@ logging:
 server:
   port: 8080
   servlet:
-    context-path: /api
+    context-path:
   compression:
     enabled: true
     mime-types: application/json,application/xml,text/html,text/xml,text/plain

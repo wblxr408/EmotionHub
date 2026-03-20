@@ -2,7 +2,6 @@
  * 通知相关API
  */
 import request from './request'
-import type { PageResult } from './post'
 
 export interface Notification {
   id: number

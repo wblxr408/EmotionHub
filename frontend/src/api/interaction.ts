@@ -83,5 +83,11 @@ export function deleteComment(commentId: number) {
   })
 }
 
-export const likePost = toggleLike
+export function likePost(targetId: number) {
+  return toggleLike({
+    targetId,
+    targetType: 'POST'
+  })
+}
+
 export const getComments = listComments

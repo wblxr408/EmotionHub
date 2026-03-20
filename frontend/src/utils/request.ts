@@ -1,11 +1,11 @@
 import axios from 'axios'
-import type { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios'
+import type { AxiosInstance, AxiosResponse } from 'axios'
 import { ElMessage } from 'element-plus'
 
 // 创建axios实例
 const service: AxiosInstance = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080',
-  timeout: 15000
+  baseURL: import.meta.env.VITE_API_BASE_URL || '/api',
+  timeout: 30000
 })
 
 // 请求拦截器
@@ -40,7 +40,9 @@ service.interceptors.response.use(
   (error) => {
     console.error('响应错误:', error)
 
-    if (error.response) {
+    if (error.code === 'ECONNABORTED') {
+      ElMessage.error('请求超时，服务可能仍在启动中，请稍后重试')
+    } else if (error.response) {
       switch (error.response.status) {
         case 401:
           ElMessage.error('未授权，请重新登录')
@@ -60,7 +62,7 @@ service.interceptors.response.use(
           ElMessage.error('网络错误')
       }
     } else {
-      ElMessage.error('网络连接失败，请检查后端是否启动')
+      ElMessage.error('网络连接失败，请检查后端或前端代理是否已就绪')
     }
 
     return Promise.reject(error)
