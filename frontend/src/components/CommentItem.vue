@@ -16,8 +16,13 @@
       <button class="link-btn" @click="emit('reply', comment)">
         <span class="meta">↩ REPLY</span>
       </button>
-      <button v-if="comment.likeCount > 0" class="link-btn">
-        <span class="meta">♥ {{ comment.likeCount }}</span>
+      <button
+        class="link-btn"
+        :class="{ active: comment.liked }"
+        :disabled="liking"
+        @click="toggleCommentLike"
+      >
+        <span class="meta">{{ comment.liked ? '♥' : '♡' }} {{ comment.likeCount }}</span>
       </button>
     </div>
 
@@ -34,15 +39,40 @@
 </template>
 
 <script setup lang="ts">
+import { ref } from 'vue'
+import { toggleLike } from '@/api/interaction'
 import type { Comment } from '@/api/interaction'
 
-defineProps<{
+const props = defineProps<{
   comment: Comment
 }>()
 
 const emit = defineEmits<{
   reply: [comment: Comment]
 }>()
+
+const liking = ref(false)
+
+const toggleCommentLike = async () => {
+  if (liking.value) return
+
+  liking.value = true
+  try {
+    const res = await toggleLike({
+      targetId: props.comment.id,
+      targetType: 'COMMENT'
+    })
+    const liked = res.data.liked
+    const delta = liked ? 1 : -1
+
+    props.comment.liked = liked
+    props.comment.likeCount = Math.max(0, props.comment.likeCount + delta)
+  } catch (error) {
+    console.error('Failed to toggle comment like:', error)
+  } finally {
+    liking.value = false
+  }
+}
 
 const formatDate = (dateStr: string) => {
   const date = new Date(dateStr)
@@ -119,6 +149,15 @@ const formatDate = (dateStr: string) => {
   &:hover {
     text-decoration: underline;
   }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+  }
+}
+
+.link-btn.active {
+  color: $color-charcoal;
 }
 
 .comment-children {
