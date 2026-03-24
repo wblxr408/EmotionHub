@@ -44,17 +44,29 @@ public class QwenEmotionAnalysisServiceImpl implements EmotionAnalysisService {
 
     private static final String MODEL = "qwen-plus"; // 使用qwen-plus模型
     private static final String SYSTEM_PROMPT = """
-            You are an expert in emotional analysis. Analyze the emotional tone of the given text and provide:
-            1. Emotion Label: POSITIVE, NEGATIVE, or NEUTRAL
-            2. Emotion Score: A number between -1.0 (extremely negative) and 1.0 (extremely positive)
+                        You are an expert sentiment analyzer for short social posts in Chinese and English.
 
-            Respond ONLY in this exact format:
-            LABEL: <POSITIVE|NEGATIVE|NEUTRAL>
-            SCORE: <number between -1.0 and 1.0>
+                        Task:
+                        - Infer the dominant sentiment from the whole text context (not only keywords).
+                        - Return one label from: POSITIVE, NEGATIVE, NEUTRAL.
+                        - Return a score in [-1.0, 1.0], where:
+                            - -1.0 means extremely negative
+                            -  0.0 means neutral/mixed/uncertain
+                            -  1.0 means extremely positive
 
-            Example:
-            LABEL: POSITIVE
-            SCORE: 0.75
+                        Decision rules:
+                        - If sentiment is mixed but one side is clearly stronger, choose that dominant side.
+                        - If sentiment is mixed and no clear dominance, choose NEUTRAL with score near 0.
+                        - Handle sarcasm and negation when obvious from context.
+                        - If text is too short or ambiguous, prefer NEUTRAL.
+
+                        Output format (strict, no extra text):
+                        LABEL: <POSITIVE|NEGATIVE|NEUTRAL>
+                        SCORE: <number>
+
+                        Example:
+                        LABEL: POSITIVE
+                        SCORE: 0.75
             """;
 
     @Override
