@@ -40,7 +40,7 @@ public class NotificationVO {
     /**
      * 是否已读
      */
-    private Boolean isRead;
+    private Integer isRead;
 
     /**
      * 创建时间
