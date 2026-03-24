@@ -19,7 +19,7 @@ services:
       - --collation-server=utf8mb4_unicode_ci
       - --default-authentication-plugin=mysql_native_password
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-p123456"]
+      test: [ "CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-p123456" ]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -35,7 +35,7 @@ services:
       - redis-data:/data
     command: redis-server --appendonly yes
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: [ "CMD", "redis-cli", "ping" ]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -52,8 +52,9 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: 6379
       JWT_SECRET: EmotionHub_Secret_Key_2024_Change_This_In_Production_Must_Be_Long_Enough_For_HS512_Algorithm_Minimum_64_Characters
-      EMOTION_PROVIDER: keyword
-      LLM_QIANWEN_ENABLED: "false"
+      EMOTION_PROVIDER: qwen
+      LLM_QIANWEN_ENABLED: "true"
+      DASHSCOPE_API_KEY: ${DASHSCOPE_API_KEY}
     ports:
       - "8080:8080"
     depends_on:
@@ -62,7 +63,7 @@ services:
       redis:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8080/api/test/hello"]
+      test: [ "CMD", "curl", "-fsS", "http://127.0.0.1:8080/api/test/hello" ]
       interval: 5s
       timeout: 5s
       retries: 12

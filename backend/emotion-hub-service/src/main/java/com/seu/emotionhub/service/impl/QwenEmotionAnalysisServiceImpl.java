@@ -12,6 +12,7 @@ import com.seu.emotionhub.model.entity.Post;
 import com.seu.emotionhub.model.enums.EmotionLabel;
 import com.seu.emotionhub.model.enums.PostStatus;
 import com.seu.emotionhub.service.EmotionAnalysisService;
+import com.seu.emotionhub.service.cache.CacheService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -36,24 +37,107 @@ import java.util.regex.Pattern;
 public class QwenEmotionAnalysisServiceImpl implements EmotionAnalysisService {
 
     private final PostMapper postMapper;
+    private final CacheService cacheService;
 
     @Value("${dashscope.api-key:}")
     private String apiKey;
 
     private static final String MODEL = "qwen-plus"; // 使用qwen-plus模型
     private static final String SYSTEM_PROMPT = """
-            You are an expert in emotional analysis. Analyze the emotional tone of the given text and provide:
-            1. Emotion Label: POSITIVE, NEGATIVE, or NEUTRAL
-            2. Emotion Score: A number between -1.0 (extremely negative) and 1.0 (extremely positive)
+                                                            You are an expert sentiment analyzer for short social posts in Chinese and English.
 
-            Respond ONLY in this exact format:
-            LABEL: <POSITIVE|NEGATIVE|NEUTRAL>
-            SCORE: <number between -1.0 and 1.0>
+            Task:
+            - Infer the dominant sentiment from the full context (not isolated keywords).
+            - Return one label from: POSITIVE, NEGATIVE, or NEUTRAL.
+            - Return a score in [-1.0, 1.0], where:
+                - -1.0 means extremely negative
+                - 0.0 means neutral/mixed/uncertain
+                - 1.0 means extremely positive
 
-            Example:
+            Critical rules for Chinese colloquial text:
+            - Distinguish complaint from playful teasing/joking tone. For example, phrases like “笑死/好笑/哈哈/绷不住” often indicate humor or a light mood, and should NOT be judged as strong NEGATIVE unless there is clear hostility.
+            - For mixed sentiment with no clear dominance, choose NEUTRAL and keep score near 0.
+            - If uncertain, prefer NEUTRAL over extreme polarity (NEGATIVE or POSITIVE).
+            - Avoid labeling as extreme NEGATIVE or POSITIVE unless there is clear dominance of one sentiment.
+            - If the sentiment is balanced or has conflicting emotions (e.g., both positive and negative signals are present), choose NEUTRAL and keep score near 0 unless one emotion clearly dominates.
+            - For question or rhetorical sentences (e.g., "这也算好的吗？"), label as NEUTRAL or give a score close to 0, reflecting ambiguity or uncertainty.
+            - If text has explicit sarcasm markers (e.g., “呵呵”, “白眼”, “真是谢谢你了”), prefer mild NEGATIVE rather than extreme NEGATIVE.
+            - If text expresses relief/celebration mixed with fatigue (e.g., “终于结束了，累死我了”), prefer mild POSITIVE or NEUTRAL depending on dominance.
+
+            Additional considerations:
+            - Avoid overemphasizing extreme emotions for sentences that express mild, mixed, or casual sentiments.
+            - For sarcasm or ambiguous humor, avoid labeling as extreme negative unless hostility is clear.
+            - Consider the context—e.g., in professional settings, negative comments about performance might carry a different tone compared to casual, personal contexts.
+
+            Few-shot guidance:
+            Text: 真不行了，这个老师说话声音怎么这么好笑
+            LABEL: NEUTRAL
+            SCORE: 0.15
+
+            Text: 这系统太垃圾了，气得我睡不着
+            LABEL: NEGATIVE
+            SCORE: -0.85
+
+            Text: 今天答辩过了，老师夸我讲得很清楚，太开心了
             LABEL: POSITIVE
-            SCORE: 0.75
-            """;
+            SCORE: 0.88
+
+            Text: 这也算好的吗？明明很差劲
+            LABEL: NEUTRAL
+            SCORE: 0.05
+
+            Text: 好吧，今天终于过了，但还是有点担心
+            LABEL: NEUTRAL
+            SCORE: 0.2
+
+            Text: 笑死我了，这作业要求也太离谱了吧
+            LABEL: NEUTRAL
+            SCORE: 0.1
+
+            Text: 行行行，你最专业了（白眼）
+            LABEL: NEGATIVE
+            SCORE: -0.35
+
+            Text: 终于下课了，谢天谢地，虽然脑子快炸了
+            LABEL: POSITIVE
+            SCORE: 0.35
+
+            Text: 还行吧，不至于太差
+            LABEL: NEUTRAL
+            SCORE: -0.05
+
+            Text: 这个功能真有你的，我直接无语
+            LABEL: NEGATIVE
+            SCORE: -0.55
+
+            Text: 太绝了吧，居然一次就过了
+            LABEL: POSITIVE
+            SCORE: 0.72
+
+            Text: 离谱中带点好笑，我都不知道该哭还是该笑
+            LABEL: NEUTRAL
+            SCORE: 0.0
+
+            Text: 不愧是你，关键时刻还得靠你
+            LABEL: POSITIVE
+            SCORE: 0.42
+
+            Text: 不愧是你，又把事情搞砸了
+            LABEL: NEGATIVE
+            SCORE: -0.62
+
+            Text: 被夸了是挺开心，但我还是有点慌
+            LABEL: NEUTRAL
+            SCORE: 0.18
+
+            Text: 呵呵，真是谢谢你了
+            LABEL: NEGATIVE
+            SCORE: -0.4
+
+            Output format (strict, no extra text):
+            LABEL: <POSITIVE|NEGATIVE|NEUTRAL>
+            SCORE: <number>
+                        """;
 
     @Override
     @Async("taskExecutor")
@@ -83,6 +167,7 @@ public class QwenEmotionAnalysisServiceImpl implements EmotionAnalysisService {
             post.setEmotionScore(java.math.BigDecimal.valueOf(result.score));
             post.setStatus(PostStatus.PUBLISHED.name());
             postMapper.updateById(post);
+            invalidateStatsCache(post.getUserId());
 
             log.info("情感分析完成（通义千问）: postId={}, label={}, score={}",
                     postId, result.label, result.score);
@@ -105,8 +190,7 @@ public class QwenEmotionAnalysisServiceImpl implements EmotionAnalysisService {
                     result.score,
                     result.label,
                     "Analyzed by Qwen AI",
-                    new String[0]
-            );
+                    new String[0]);
         } catch (Exception e) {
             log.error("通义千问文本分析失败", e);
             return fallbackAnalyzeText(content);
@@ -126,7 +210,7 @@ public class QwenEmotionAnalysisServiceImpl implements EmotionAnalysisService {
 
         Message userMsg = Message.builder()
                 .role(Role.USER.getValue())
-                .content("Analyze the emotion of this text: " + content)
+                .content("Analyze sentiment for this text:\n" + content + "\nReturn only LABEL and SCORE.")
                 .build();
 
         GenerationParam param = GenerationParam.builder()
@@ -141,7 +225,8 @@ public class QwenEmotionAnalysisServiceImpl implements EmotionAnalysisService {
         GenerationResult result = gen.call(param);
         String response = result.getOutput().getChoices().get(0).getMessage().getContent();
 
-        return parseEmotionResult(response);
+        InternalEmotionResult parsed = parseEmotionResult(response);
+        return adjustForTeasingAndHumor(content, parsed);
     }
 
     /**
@@ -175,25 +260,63 @@ public class QwenEmotionAnalysisServiceImpl implements EmotionAnalysisService {
     }
 
     /**
+     * 轻量后处理：降低“调侃/玩笑语气”被判成明显负向的概率
+     */
+    private InternalEmotionResult adjustForTeasingAndHumor(String content, InternalEmotionResult rawResult) {
+        if (content == null || content.isBlank()) {
+            return rawResult;
+        }
+
+        boolean hasHumorCue = containsAny(content,
+                "好笑", "哈哈", "笑死", "笑哭", "绷不住", "有意思", "好玩", "笑不活了");
+        boolean hasTeasingCue = containsAny(content,
+                "真不行了", "要笑死了", "这也太", "怎么这么");
+        boolean hasStrongNegativeCue = containsAny(content,
+                "垃圾", "恶心", "绝望", "崩溃", "讨厌", "气死", "痛苦", "抑郁", "恨", "烦死");
+
+        if (EmotionLabel.NEGATIVE.name().equals(rawResult.label)
+                && rawResult.score > -0.75
+                && (hasHumorCue || hasTeasingCue)
+                && !hasStrongNegativeCue) {
+            rawResult.label = EmotionLabel.NEUTRAL.name();
+            rawResult.score = Math.max(-0.1, rawResult.score + 0.45);
+            log.info("检测到调侃/幽默语气，已将结果从偏负向校正为中性: score={}", rawResult.score);
+        }
+
+        return rawResult;
+    }
+
+    private boolean containsAny(String content, String... terms) {
+        for (String term : terms) {
+            if (content.contains(term)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
      * 降级方案：使用关键词分析
      */
     private void fallbackToKeywordAnalysis(Post post) {
         String content = post.getContent().toLowerCase();
 
-        String[] positiveWords = {"happy", "joy", "love", "excellent", "wonderful", "great", "amazing",
-                "开心", "快乐", "喜欢", "棒", "好", "美好", "幸福", "成功", "满足"};
-        String[] negativeWords = {"sad", "angry", "hate", "terrible", "awful", "bad", "horrible",
-                "难过", "生气", "讨厌", "糟糕", "差", "痛苦", "失望", "焦虑", "压力"};
+        String[] positiveWords = { "happy", "joy", "love", "excellent", "wonderful", "great", "amazing",
+                "开心", "快乐", "喜欢", "棒", "好", "美好", "幸福", "成功", "满足" };
+        String[] negativeWords = { "sad", "angry", "hate", "terrible", "awful", "bad", "horrible",
+                "难过", "生气", "讨厌", "糟糕", "差", "痛苦", "失望", "焦虑", "压力" };
 
         int positiveCount = 0;
         int negativeCount = 0;
 
         for (String word : positiveWords) {
-            if (content.contains(word)) positiveCount++;
+            if (content.contains(word))
+                positiveCount++;
         }
 
         for (String word : negativeWords) {
-            if (content.contains(word)) negativeCount++;
+            if (content.contains(word))
+                negativeCount++;
         }
 
         String label;
@@ -214,6 +337,7 @@ public class QwenEmotionAnalysisServiceImpl implements EmotionAnalysisService {
         post.setEmotionScore(java.math.BigDecimal.valueOf(score));
         post.setStatus(PostStatus.PUBLISHED.name());
         postMapper.updateById(post);
+        invalidateStatsCache(post.getUserId());
 
         log.info("情感分析完成（关键词降级）: postId={}, label={}, score={}",
                 post.getId(), label, score);
@@ -225,20 +349,22 @@ public class QwenEmotionAnalysisServiceImpl implements EmotionAnalysisService {
     private EmotionAnalysisService.EmotionResult fallbackAnalyzeText(String content) {
         String lowerContent = content.toLowerCase();
 
-        String[] positiveWords = {"happy", "joy", "love", "excellent", "wonderful", "great", "amazing",
-                "开心", "快乐", "喜欢", "棒", "好", "美好", "幸福", "成功", "满足"};
-        String[] negativeWords = {"sad", "angry", "hate", "terrible", "awful", "bad", "horrible",
-                "难过", "生气", "讨厌", "糟糕", "差", "痛苦", "失望", "焦虑", "压力"};
+        String[] positiveWords = { "happy", "joy", "love", "excellent", "wonderful", "great", "amazing",
+                "开心", "快乐", "喜欢", "棒", "好", "美好", "幸福", "成功", "满足" };
+        String[] negativeWords = { "sad", "angry", "hate", "terrible", "awful", "bad", "horrible",
+                "难过", "生气", "讨厌", "糟糕", "差", "痛苦", "失望", "焦虑", "压力" };
 
         int positiveCount = 0;
         int negativeCount = 0;
 
         for (String word : positiveWords) {
-            if (lowerContent.contains(word)) positiveCount++;
+            if (lowerContent.contains(word))
+                positiveCount++;
         }
 
         for (String word : negativeWords) {
-            if (lowerContent.contains(word)) negativeCount++;
+            if (lowerContent.contains(word))
+                negativeCount++;
         }
 
         String label;
@@ -259,8 +385,7 @@ public class QwenEmotionAnalysisServiceImpl implements EmotionAnalysisService {
                 score,
                 label,
                 "Analyzed by keyword matching (fallback)",
-                new String[0]
-        );
+                new String[0]);
     }
 
     /**
@@ -269,5 +394,10 @@ public class QwenEmotionAnalysisServiceImpl implements EmotionAnalysisService {
     private static class InternalEmotionResult {
         String label = EmotionLabel.NEUTRAL.name();
         Double score = 0.0;
+    }
+
+    private void invalidateStatsCache(Long userId) {
+        cacheService.delete(CacheService.CacheKey.STATS_USER + userId);
+        cacheService.delete(CacheService.CacheKey.STATS_PLATFORM);
     }
 }

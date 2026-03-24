@@ -54,7 +54,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { createPost } from '@/api/post'
+import { createPost, listPosts } from '@/api/post'
 import { ElMessage } from 'element-plus'
 
 const props = defineProps<{
@@ -110,13 +110,40 @@ const removeImage = (index: number) => {
   form.value.images.splice(index, 1)
 }
 
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+
+const waitForPostPublished = async (postId: number, maxAttempts = 12, intervalMs = 1000) => {
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    try {
+      const res = await listPosts({
+        page: 1,
+        size: 20,
+        orderBy: 'LATEST'
+      })
+      const exists = res.data.records.some((post: { id: number }) => post.id === postId)
+      if (exists) {
+        return true
+      }
+    } catch {
+      // ignore transient errors during polling
+    }
+    await sleep(intervalMs)
+  }
+  return false
+}
+
 const handleSubmit = async () => {
   loading.value = true
   try {
-    await createPost({
+    const createRes = await createPost({
       content: form.value.content,
       images: form.value.images.length > 0 ? form.value.images : undefined
     })
+
+    const postId = createRes?.data?.id
+    if (postId) {
+      await waitForPostPublished(postId)
+    }
 
     ElMessage.success('Entry submitted successfully')
     visible.value = false

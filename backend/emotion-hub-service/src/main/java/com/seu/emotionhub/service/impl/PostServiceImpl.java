@@ -25,6 +25,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.util.StringUtils;
 
 import java.util.List;
@@ -77,8 +79,18 @@ public class PostServiceImpl implements PostService {
 
         log.info("用户发帖成功: userId={}, postId={}", userId, post.getId());
 
-        // 异步触发情感分析
-        emotionAnalysisService.analyzePostAsync(post.getId());
+        // 在事务提交后异步触发情感分析，避免异步线程读取到未提交数据
+        final Long postId = post.getId();
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    emotionAnalysisService.analyzePostAsync(postId);
+                }
+            });
+        } else {
+            emotionAnalysisService.analyzePostAsync(postId);
+        }
 
         return convertToPostVO(post);
     }
@@ -123,8 +135,7 @@ public class PostServiceImpl implements PostService {
                 postVOList,
                 postPage.getTotal(),
                 (int) postPage.getCurrent(),
-                (int) postPage.getSize()
-        );
+                (int) postPage.getSize());
     }
 
     @Override
@@ -203,8 +214,7 @@ public class PostServiceImpl implements PostService {
                 postVOList,
                 postPage.getTotal(),
                 (int) postPage.getCurrent(),
-                (int) postPage.getSize()
-        );
+                (int) postPage.getSize());
     }
 
     /**

@@ -98,6 +98,21 @@ const page = ref(1)
 const hasMore = ref(true)
 const unreadCount = ref(0)
 
+const parseUnreadCount = (payload: unknown): number => {
+  if (typeof payload === 'number') {
+    return payload
+  }
+
+  if (payload && typeof payload === 'object' && 'count' in payload) {
+    const count = (payload as { count?: unknown }).count
+    if (typeof count === 'number') {
+      return count
+    }
+  }
+
+  return 0
+}
+
 const loadNotifications = async (reset = false) => {
   if (reset) {
     page.value = 1
@@ -126,7 +141,7 @@ const loadNotifications = async (reset = false) => {
 const loadUnreadCount = async () => {
   try {
     const res = await getUnreadCount()
-    unreadCount.value = res.data
+    unreadCount.value = parseUnreadCount(res.data)
   } catch (error) {
     console.error('Failed to load unread count:', error)
   }
