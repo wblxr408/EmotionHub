@@ -12,6 +12,7 @@ import com.seu.emotionhub.model.entity.Post;
 import com.seu.emotionhub.model.enums.EmotionLabel;
 import com.seu.emotionhub.model.enums.PostStatus;
 import com.seu.emotionhub.service.EmotionAnalysisService;
+import com.seu.emotionhub.service.cache.CacheService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -36,6 +37,7 @@ import java.util.regex.Pattern;
 public class QwenEmotionAnalysisServiceImpl implements EmotionAnalysisService {
 
     private final PostMapper postMapper;
+    private final CacheService cacheService;
 
     @Value("${dashscope.api-key:}")
     private String apiKey;
@@ -83,6 +85,7 @@ public class QwenEmotionAnalysisServiceImpl implements EmotionAnalysisService {
             post.setEmotionScore(java.math.BigDecimal.valueOf(result.score));
             post.setStatus(PostStatus.PUBLISHED.name());
             postMapper.updateById(post);
+            invalidateStatsCache(post.getUserId());
 
             log.info("情感分析完成（通义千问）: postId={}, label={}, score={}",
                     postId, result.label, result.score);
@@ -105,8 +108,7 @@ public class QwenEmotionAnalysisServiceImpl implements EmotionAnalysisService {
                     result.score,
                     result.label,
                     "Analyzed by Qwen AI",
-                    new String[0]
-            );
+                    new String[0]);
         } catch (Exception e) {
             log.error("通义千问文本分析失败", e);
             return fallbackAnalyzeText(content);
@@ -180,20 +182,22 @@ public class QwenEmotionAnalysisServiceImpl implements EmotionAnalysisService {
     private void fallbackToKeywordAnalysis(Post post) {
         String content = post.getContent().toLowerCase();
 
-        String[] positiveWords = {"happy", "joy", "love", "excellent", "wonderful", "great", "amazing",
-                "开心", "快乐", "喜欢", "棒", "好", "美好", "幸福", "成功", "满足"};
-        String[] negativeWords = {"sad", "angry", "hate", "terrible", "awful", "bad", "horrible",
-                "难过", "生气", "讨厌", "糟糕", "差", "痛苦", "失望", "焦虑", "压力"};
+        String[] positiveWords = { "happy", "joy", "love", "excellent", "wonderful", "great", "amazing",
+                "开心", "快乐", "喜欢", "棒", "好", "美好", "幸福", "成功", "满足" };
+        String[] negativeWords = { "sad", "angry", "hate", "terrible", "awful", "bad", "horrible",
+                "难过", "生气", "讨厌", "糟糕", "差", "痛苦", "失望", "焦虑", "压力" };
 
         int positiveCount = 0;
         int negativeCount = 0;
 
         for (String word : positiveWords) {
-            if (content.contains(word)) positiveCount++;
+            if (content.contains(word))
+                positiveCount++;
         }
 
         for (String word : negativeWords) {
-            if (content.contains(word)) negativeCount++;
+            if (content.contains(word))
+                negativeCount++;
         }
 
         String label;
@@ -214,6 +218,7 @@ public class QwenEmotionAnalysisServiceImpl implements EmotionAnalysisService {
         post.setEmotionScore(java.math.BigDecimal.valueOf(score));
         post.setStatus(PostStatus.PUBLISHED.name());
         postMapper.updateById(post);
+        invalidateStatsCache(post.getUserId());
 
         log.info("情感分析完成（关键词降级）: postId={}, label={}, score={}",
                 post.getId(), label, score);
@@ -225,20 +230,22 @@ public class QwenEmotionAnalysisServiceImpl implements EmotionAnalysisService {
     private EmotionAnalysisService.EmotionResult fallbackAnalyzeText(String content) {
         String lowerContent = content.toLowerCase();
 
-        String[] positiveWords = {"happy", "joy", "love", "excellent", "wonderful", "great", "amazing",
-                "开心", "快乐", "喜欢", "棒", "好", "美好", "幸福", "成功", "满足"};
-        String[] negativeWords = {"sad", "angry", "hate", "terrible", "awful", "bad", "horrible",
-                "难过", "生气", "讨厌", "糟糕", "差", "痛苦", "失望", "焦虑", "压力"};
+        String[] positiveWords = { "happy", "joy", "love", "excellent", "wonderful", "great", "amazing",
+                "开心", "快乐", "喜欢", "棒", "好", "美好", "幸福", "成功", "满足" };
+        String[] negativeWords = { "sad", "angry", "hate", "terrible", "awful", "bad", "horrible",
+                "难过", "生气", "讨厌", "糟糕", "差", "痛苦", "失望", "焦虑", "压力" };
 
         int positiveCount = 0;
         int negativeCount = 0;
 
         for (String word : positiveWords) {
-            if (lowerContent.contains(word)) positiveCount++;
+            if (lowerContent.contains(word))
+                positiveCount++;
         }
 
         for (String word : negativeWords) {
-            if (lowerContent.contains(word)) negativeCount++;
+            if (lowerContent.contains(word))
+                negativeCount++;
         }
 
         String label;
@@ -259,8 +266,7 @@ public class QwenEmotionAnalysisServiceImpl implements EmotionAnalysisService {
                 score,
                 label,
                 "Analyzed by keyword matching (fallback)",
-                new String[0]
-        );
+                new String[0]);
     }
 
     /**
@@ -269,5 +275,10 @@ public class QwenEmotionAnalysisServiceImpl implements EmotionAnalysisService {
     private static class InternalEmotionResult {
         String label = EmotionLabel.NEUTRAL.name();
         Double score = 0.0;
+    }
+
+    private void invalidateStatsCache(Long userId) {
+        cacheService.delete(CacheService.CacheKey.STATS_USER + userId);
+        cacheService.delete(CacheService.CacheKey.STATS_PLATFORM);
     }
 }

@@ -1,4 +1,5 @@
 package com.seu.emotionhub.service.impl;
+
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 
 import com.seu.emotionhub.dao.mapper.PostMapper;
@@ -6,6 +7,7 @@ import com.seu.emotionhub.model.entity.Post;
 import com.seu.emotionhub.model.enums.EmotionLabel;
 import com.seu.emotionhub.model.enums.PostStatus;
 import com.seu.emotionhub.service.EmotionAnalysisService;
+import com.seu.emotionhub.service.cache.CacheService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
@@ -30,6 +32,7 @@ import java.util.Random;
 public class EmotionAnalysisServiceImpl implements EmotionAnalysisService {
 
     private final PostMapper postMapper;
+    private final CacheService cacheService;
     private final Random random = new Random();
 
     // 积极词汇
@@ -70,6 +73,7 @@ public class EmotionAnalysisServiceImpl implements EmotionAnalysisService {
             post.setStatus(PostStatus.PUBLISHED.getCode()); // 分析完成，状态改为已发布
 
             postMapper.updateById(post);
+            invalidateStatsCache(post.getUserId());
 
             log.info("帖子情感分析完成: postId={}, label={}, score={}",
                     postId, result.getLabel(), result.getScore());
@@ -97,7 +101,8 @@ public class EmotionAnalysisServiceImpl implements EmotionAnalysisService {
         for (String word : POSITIVE_WORDS) {
             if (content.contains(word)) {
                 positiveCount++;
-                if (keywords.length() > 0) keywords.append(",");
+                if (keywords.length() > 0)
+                    keywords.append(",");
                 keywords.append(word);
             }
         }
@@ -105,7 +110,8 @@ public class EmotionAnalysisServiceImpl implements EmotionAnalysisService {
         for (String word : NEGATIVE_WORDS) {
             if (content.contains(word)) {
                 negativeCount++;
-                if (keywords.length() > 0) keywords.append(",");
+                if (keywords.length() > 0)
+                    keywords.append(",");
                 keywords.append(word);
             }
         }
@@ -147,5 +153,10 @@ public class EmotionAnalysisServiceImpl implements EmotionAnalysisService {
                 : new String[0];
 
         return new EmotionResult(score, label, analysis, keywordArray);
+    }
+
+    private void invalidateStatsCache(Long userId) {
+        cacheService.delete(CacheService.CacheKey.STATS_USER + userId);
+        cacheService.delete(CacheService.CacheKey.STATS_PLATFORM);
     }
 }
