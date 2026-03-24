@@ -16,6 +16,9 @@
       <button class="link-btn" @click="emit('reply', comment)">
         <span class="meta">↩ REPLY</span>
       </button>
+      <button v-if="userStore.isLoggedIn" class="link-btn" @click="emit('report', comment)">
+        <span class="meta">REPORT</span>
+      </button>
       <button
         class="link-btn"
         :class="{ active: comment.liked }"
@@ -33,6 +36,7 @@
         :key="child.id"
         :comment="child"
         @reply="emit('reply', $event)"
+        @report="emit('report', $event)"
       />
     </div>
   </div>
@@ -42,6 +46,7 @@
 import { ref } from 'vue'
 import { toggleLike } from '@/api/interaction'
 import type { Comment } from '@/api/interaction'
+import { useUserStore } from '@/stores/user'
 
 const props = defineProps<{
   comment: Comment
@@ -49,9 +54,11 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   reply: [comment: Comment]
+  report: [comment: Comment]
 }>()
 
 const liking = ref(false)
+const userStore = useUserStore()
 
 const toggleCommentLike = async () => {
   if (liking.value) return

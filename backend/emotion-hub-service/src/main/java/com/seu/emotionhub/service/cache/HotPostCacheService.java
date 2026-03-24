@@ -3,6 +3,7 @@ package com.seu.emotionhub.service.cache;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.seu.emotionhub.dao.mapper.PostMapper;
 import com.seu.emotionhub.model.entity.Post;
+import com.seu.emotionhub.model.enums.PostStatus;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -76,6 +77,7 @@ public class HotPostCacheService {
             // 查询热门帖子（按综合热度排序）
             List<Post> hotPosts = postMapper.selectList(
                 new LambdaQueryWrapper<Post>()
+                    .eq(Post::getStatus, PostStatus.PUBLISHED.getCode())
                     .orderByDesc(Post::getViewCount)
                     .orderByDesc(Post::getLikeCount)
                     .orderByDesc(Post::getCommentCount)
@@ -141,7 +143,7 @@ public class HotPostCacheService {
     public void updateHotScore(Long postId, String action) {
         try {
             Post post = postMapper.selectById(postId);
-            if (post == null) {
+            if (post == null || !PostStatus.PUBLISHED.getCode().equals(post.getStatus())) {
                 return;
             }
 

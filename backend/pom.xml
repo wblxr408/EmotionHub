@@ -216,7 +216,10 @@
                 <configuration>
                     <source>${java.version}</source>
                     <target>${java.version}</target>
-                    <parameters>${maven.compiler.parameters}</parameters>
+                    <parameters>true</parameters>
+                    <compilerArgs>
+                        <arg>-parameters</arg>
+                    </compilerArgs>
                     <encoding>${project.build.sourceEncoding}</encoding>
                     <annotationProcessorPaths>
                         <path>

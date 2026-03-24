@@ -23,6 +23,11 @@ public enum PostStatus {
     PUBLISHED("PUBLISHED", "已发布"),
 
     /**
+     * 已下架 - 管理员审核后对前台隐藏
+     */
+    HIDDEN("HIDDEN", "已下架"),
+
+    /**
      * 已删除 - 软删除状态
      */
     DELETED("DELETED", "已删除");

@@ -5,8 +5,8 @@ spring:
   application:
     name: EmotionHub
   flyway:
-    enabled: false
-    clean-disabled: false
+    enabled: true
+    baseline-on-migrate: true
   # 数据源配置
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver

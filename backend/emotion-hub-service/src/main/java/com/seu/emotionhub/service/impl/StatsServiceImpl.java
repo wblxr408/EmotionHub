@@ -60,12 +60,13 @@ public class StatsServiceImpl implements StatsService {
         // 发帖数
         LambdaQueryWrapper<Post> postQuery = new LambdaQueryWrapper<>();
         postQuery.eq(Post::getUserId, userId)
-                .ne(Post::getStatus, PostStatus.DELETED.getCode());
+                .eq(Post::getStatus, PostStatus.PUBLISHED.getCode());
         long postCount = postMapper.selectCount(postQuery);
 
         // 评论数
         LambdaQueryWrapper<Comment> commentQuery = new LambdaQueryWrapper<>();
-        commentQuery.eq(Comment::getUserId, userId);
+        commentQuery.eq(Comment::getUserId, userId)
+                .eq(Comment::getDeleted, false);
         long commentCount = commentMapper.selectCount(commentQuery);
 
         // 获赞数（帖子+评论）
@@ -127,11 +128,13 @@ public class StatsServiceImpl implements StatsService {
 
         // 总帖子数
         LambdaQueryWrapper<Post> postQuery = new LambdaQueryWrapper<>();
-        postQuery.ne(Post::getStatus, PostStatus.DELETED.getCode());
+        postQuery.eq(Post::getStatus, PostStatus.PUBLISHED.getCode());
         long totalPosts = postMapper.selectCount(postQuery);
 
         // 总评论数
-        long totalComments = commentMapper.selectCount(null);
+        long totalComments = commentMapper.selectCount(
+                new LambdaQueryWrapper<Comment>().eq(Comment::getDeleted, false)
+        );
 
         // 总点赞数
         long totalLikes = likeRecordMapper.selectCount(null);

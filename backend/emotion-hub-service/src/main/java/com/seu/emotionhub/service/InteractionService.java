@@ -54,6 +54,13 @@ public interface InteractionService {
     void deleteComment(Long commentId);
 
     /**
+     * 管理员删除评论
+     *
+     * @param commentId 评论ID
+     */
+    void adminDeleteComment(Long commentId);
+
+    /**
      * 获取评论详情
      *
      * @param commentId 评论ID

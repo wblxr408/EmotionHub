@@ -127,6 +127,8 @@
       <!-- 返回链接 -->
       <div class="back-link">
         <router-link to="/" class="meta">← RETURN TO PLAZA</router-link>
+        <span class="meta" style="margin: 0 1rem;">|</span>
+        <router-link to="/admin/login" class="meta admin-link">ADMIN PANEL →</router-link>
       </div>
     </div>
   </div>
@@ -169,6 +171,15 @@ const handleLogin = async () => {
 
   try {
     await userStore.login(loginForm)
+
+    // 🔥 管理员账号不允许在普通用户登录页登录
+    if (userStore.isAdmin) {
+      errorMessage.value = 'Admin accounts cannot login here. Please use Admin Panel.'
+      ElMessage.warning('管理员请使用管理员后台登录')
+      userStore.logout()
+      return
+    }
+
     ElMessage.success('Authentication successful')
     router.push('/')
   } catch (error: any) {
@@ -269,6 +280,9 @@ const handleRegister = async () => {
 .back-link {
   text-align: center;
   margin-top: 2rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 
   a {
     color: $color-bordeaux;
@@ -276,6 +290,11 @@ const handleRegister = async () => {
 
     &:hover {
       text-decoration: underline;
+    }
+
+    &.admin-link {
+      color: #C62828;
+      font-weight: 700;
     }
   }
 }

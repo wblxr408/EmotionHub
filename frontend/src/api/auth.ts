@@ -22,6 +22,8 @@ export interface UserInfo {
   email: string
   avatar?: string
   bio?: string
+  role: string
+  status: string
   createdAt: string
 }
 

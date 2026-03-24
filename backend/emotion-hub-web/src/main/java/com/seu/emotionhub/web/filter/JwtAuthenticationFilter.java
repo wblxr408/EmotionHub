@@ -1,6 +1,9 @@
 package com.seu.emotionhub.web.filter;
 
 import com.seu.emotionhub.common.util.JwtUtil;
+import com.seu.emotionhub.dao.mapper.UserMapper;
+import com.seu.emotionhub.model.entity.User;
+import com.seu.emotionhub.model.enums.UserStatus;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -31,6 +34,7 @@ import java.util.Collections;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtUtil jwtUtil;
+    private final UserMapper userMapper;
 
     private static final String AUTHORIZATION_HEADER = "Authorization";
     private static final String BEARER_PREFIX = "Bearer ";
@@ -52,12 +56,29 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 String role = jwtUtil.getRoleFromToken(token);
 
                 if (userId != null && username != null) {
+                    User user = userMapper.selectById(userId);
+                    if (user == null) {
+                        filterChain.doFilter(request, response);
+                        return;
+                    }
+                    if (UserStatus.BANNED.getCode().equals(user.getStatus())) {
+                        response.setContentType("application/json;charset=UTF-8");
+                        response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                        response.getWriter().write(
+                                "{\"code\":2008,\"message\":\"账号已被禁用\",\"data\":null,\"timestamp\":" +
+                                        System.currentTimeMillis() + "}"
+                        );
+                        return;
+                    }
+
+                    String effectiveRole = StringUtils.hasText(user.getRole()) ? user.getRole() : role;
+
                     // 创建认证对象
                     UsernamePasswordAuthenticationToken authentication =
                             new UsernamePasswordAuthenticationToken(
                                     userId, // principal设置为userId，方便后续获取
                                     null,
-                                    Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + role))
+                                    Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + effectiveRole))
                             );
 
                     authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
@@ -65,7 +86,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     // 设置到SecurityContext
                     SecurityContextHolder.getContext().setAuthentication(authentication);
 
-                    log.debug("JWT认证成功: userId={}, username={}, role={}", userId, username, role);
+                    log.debug("JWT认证成功: userId={}, username={}, role={}", userId, username, effectiveRole);
                 }
             }
         } catch (Exception e) {

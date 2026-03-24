@@ -2,13 +2,16 @@
 spring:
   application:
     name: emotion-hub
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
 
   # 数据源配置
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://mysql:3306/emotion_hub?useUnicode=true&characterEncoding=utf8&useSSL=true&serverTimezone=Asia/Shanghai
-    username: ${DB_USERNAME:root}
-    password: ${DB_PASSWORD}
+    url: jdbc:mysql://mysql:3306/emotion_hub?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+    username: ${DB_USERNAME:emotionhub}
+    password: ${DB_PASSWORD:123456}
     hikari:
       minimum-idle: 10
       maximum-pool-size: 50

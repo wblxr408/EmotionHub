@@ -11,6 +11,7 @@ export const useUserStore = defineStore('user', () => {
   const userInfo = ref<UserInfo | null>(null)
 
   const isLoggedIn = computed(() => !!token.value)
+  const isAdmin = computed(() => userInfo.value?.role === 'ADMIN')
 
   /**
    * 登录
@@ -71,6 +72,7 @@ export const useUserStore = defineStore('user', () => {
     token,
     userInfo,
     isLoggedIn,
+    isAdmin,
     login,
     register,
     getUserInfo,

@@ -58,6 +58,13 @@
           <button class="archive-button-outline" @click="toggleLike">
             {{ post.liked ? '♥' : '♡' }} {{ post.likeCount }} LIKES
           </button>
+          <button
+            v-if="userStore.isLoggedIn"
+            class="archive-button-outline"
+            @click="handleReport('POST', post.id)"
+          >
+            REPORT
+          </button>
           <span class="meta">{{ post.viewCount }} VIEWS</span>
           <span class="meta">{{ post.commentCount }} COMMENTS</span>
         </div>
@@ -91,6 +98,7 @@
               :key="comment.id"
               :comment="comment"
               @reply="handleReply"
+              @report="handleCommentReport"
             />
           </div>
         </div>
@@ -111,11 +119,14 @@ import { getPostDetail } from '@/api/post'
 import { likePost, getComments, createComment } from '@/api/interaction'
 import type { Post } from '@/api/post'
 import type { Comment } from '@/api/interaction'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import CommentItem from '@/components/CommentItem.vue'
+import { submitReport } from '@/api/admin'
+import { useUserStore } from '@/stores/user'
 
 const route = useRoute()
 const router = useRouter()
+const userStore = useUserStore()
 
 const post = ref<Post | null>(null)
 const comments = ref<Comment[]>([])
@@ -182,6 +193,38 @@ const submitComment = async () => {
 const handleReply = (parentComment: Comment) => {
   // 简单处理：将回复内容预填充到评论框
   commentContent.value = `@${parentComment.username} `
+}
+
+const handleReport = async (targetType: 'POST' | 'COMMENT', targetId: number) => {
+  if (!userStore.isLoggedIn) {
+    router.push('/login')
+    return
+  }
+
+  try {
+    const result = await ElMessageBox.prompt('请输入举报原因', '提交举报', {
+      inputPlaceholder: '例如：辱骂、人身攻击、垃圾内容',
+      confirmButtonText: '提交',
+      cancelButtonText: '取消'
+    })
+    if (!result.value?.trim()) {
+      return
+    }
+    await submitReport({
+      targetType,
+      targetId,
+      reason: result.value.trim()
+    })
+    ElMessage.success('举报已提交')
+  } catch (error) {
+    if (error !== 'cancel') {
+      ElMessage.error('举报提交失败')
+    }
+  }
+}
+
+const handleCommentReport = (comment: Comment) => {
+  handleReport('COMMENT', comment.id)
 }
 
 const formatDate = (dateStr: string) => {

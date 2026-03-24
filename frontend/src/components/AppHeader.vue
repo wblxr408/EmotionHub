@@ -13,7 +13,7 @@
           <span class="meta">PLAZA</span>
         </router-link>
 
-        <template v-if="userStore.isLoggedIn">
+        <template v-if="userStore.isLoggedIn && !userStore.isAdmin">
           <router-link to="/profile" class="nav-link">
             <span class="meta">PROFILE</span>
           </router-link>
@@ -24,9 +24,15 @@
           </router-link>
         </template>
 
-        <template v-else>
+        <template v-else-if="!userStore.isLoggedIn">
           <router-link to="/login" class="nav-link">
             <span class="meta">LOGIN</span>
+          </router-link>
+        </template>
+
+        <template v-if="userStore.isAdmin">
+          <router-link to="/admin" class="nav-link admin-nav-link">
+            <span class="meta">ADMIN PANEL</span>
           </router-link>
         </template>
       </nav>
@@ -132,6 +138,18 @@ onMounted(() => {
       height: 2px;
       background: $color-bordeaux;
     }
+  }
+}
+
+.admin-nav-link {
+  background-color: rgba(198, 40, 40, 0.1);
+  border-color: $color-bordeaux;
+  font-weight: 700;
+
+  &.router-link-active {
+    background-color: $color-bordeaux;
+    color: $color-parchment;
+    border-color: $color-bordeaux;
   }
 }
 

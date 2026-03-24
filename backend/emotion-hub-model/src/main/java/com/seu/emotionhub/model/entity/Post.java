@@ -93,10 +93,4 @@ public class Post {
      */
     @TableField(value = "updated_at", fill = FieldFill.INSERT_UPDATE)
     private LocalDateTime updatedAt;
-    
-    public Boolean getDeleted(){
-        if (this.status == "deleted")
-            return true;
-        return false;
-    }
 }

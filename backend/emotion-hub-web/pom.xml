@@ -64,6 +64,16 @@
             <artifactId>druid-spring-boot-3-starter</artifactId>
         </dependency>
 
+        <!-- Flyway数据库迁移 -->
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-mysql</artifactId>
+        </dependency>
+
         <!-- Knife4j API文档 -->
         <dependency>
             <groupId>com.github.xiaoymin</groupId>

@@ -146,6 +146,9 @@ public class PostServiceImpl implements PostService {
         if (PostStatus.DELETED.getCode().equals(post.getStatus())) {
             throw new BusinessException(ErrorCode.POST_DELETED);
         }
+        if (!PostStatus.PUBLISHED.getCode().equals(post.getStatus())) {
+            throw new BusinessException(ErrorCode.NOT_FOUND, "帖子已下架");
+        }
 
         // 浏览量+1
         postMapper.incrementViewCount(postId, 1);
@@ -187,7 +190,7 @@ public class PostServiceImpl implements PostService {
     public PageResult<PostVO> getUserPosts(Long userId, Integer page, Integer size) {
         LambdaQueryWrapper<Post> query = new LambdaQueryWrapper<>();
         query.eq(Post::getUserId, userId);
-        query.ne(Post::getStatus, PostStatus.DELETED.getCode()); // 排除已删除
+        query.eq(Post::getStatus, PostStatus.PUBLISHED.getCode());
         query.orderByDesc(Post::getCreatedAt);
 
         Page<Post> postPage = postMapper.selectPage(new Page<>(page, size), query);

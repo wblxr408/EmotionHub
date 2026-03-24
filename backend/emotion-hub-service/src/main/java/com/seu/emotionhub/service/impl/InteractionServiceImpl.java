@@ -13,6 +13,7 @@ import com.seu.emotionhub.model.entity.Comment;
 import com.seu.emotionhub.model.entity.LikeRecord;
 import com.seu.emotionhub.model.entity.Post;
 import com.seu.emotionhub.model.entity.User;
+import com.seu.emotionhub.model.enums.PostStatus;
 import com.seu.emotionhub.model.enums.TargetType;
 import com.seu.emotionhub.service.InteractionService;
 import com.seu.emotionhub.service.NotificationService;
@@ -61,6 +62,13 @@ public class InteractionServiceImpl implements InteractionService {
         if (!TargetType.POST.getCode().equals(targetType) &&
                 !TargetType.COMMENT.getCode().equals(targetType)) {
             throw new BusinessException(ErrorCode.PARAM_ERROR, "无效的目标类型");
+        }
+
+        if (TargetType.POST.getCode().equals(targetType)) {
+            requirePublishedPost(targetId);
+        } else {
+            Comment comment = requireAvailableComment(targetId);
+            requirePublishedPost(comment.getPostId());
         }
 
         // 查询是否已点赞
@@ -113,16 +121,12 @@ public class InteractionServiceImpl implements InteractionService {
     public CommentVO createComment(CommentCreateRequest request) {
         Long userId = getCurrentUserId();
 
-        // 校验帖子是否存在
-        Post post = postMapper.selectById(request.getPostId());
-        if (post == null) {
-            throw new BusinessException(ErrorCode.POST_NOT_FOUND);
-        }
+        Post post = requirePublishedPost(request.getPostId());
 
         // 如果是回复评论，校验父评论是否存在
         if (request.getParentId() != null) {
-            Comment parentComment = commentMapper.selectById(request.getParentId());
-            if (parentComment == null) {
+            Comment parentComment = requireAvailableComment(request.getParentId());
+            if (!parentComment.getPostId().equals(request.getPostId())) {
                 throw new BusinessException(ErrorCode.PARENT_COMMENT_NOT_FOUND);
             }
         }
@@ -134,6 +138,7 @@ public class InteractionServiceImpl implements InteractionService {
         comment.setParentId(request.getParentId());
         comment.setContent(request.getContent());
         comment.setLikeCount(0);
+        comment.setDeleted(false);
 
         commentMapper.insert(comment);
 
@@ -161,9 +166,12 @@ public class InteractionServiceImpl implements InteractionService {
 
     @Override
     public List<CommentVO> listComments(Long postId) {
+        requirePublishedPost(postId);
+
         // 查询所有评论
         LambdaQueryWrapper<Comment> query = new LambdaQueryWrapper<>();
         query.eq(Comment::getPostId, postId)
+                .eq(Comment::getDeleted, false)
                 .orderByAsc(Comment::getCreatedAt);
 
         List<Comment> comments = commentMapper.selectList(query);
@@ -179,30 +187,13 @@ public class InteractionServiceImpl implements InteractionService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void deleteComment(Long commentId) {
-        Long userId = getCurrentUserId();
+        deleteCommentInternal(commentId, getCurrentUserId(), false);
+    }
 
-        Comment comment = commentMapper.selectById(commentId);
-        if (comment == null) {
-            throw new BusinessException(ErrorCode.COMMENT_NOT_FOUND);
-        }
-
-        // 权限校验：只能删除自己的评论
-        if (!comment.getUserId().equals(userId)) {
-            throw new BusinessException(ErrorCode.COMMENT_NOT_OWNER);
-        }
-
-        // 删除评论（级联删除子评论）
-        deleteCommentAndChildren(commentId);
-
-        // 更新帖子评论数
-        Post post = postMapper.selectById(comment.getPostId());
-        if (post != null) {
-            post.setCommentCount(Math.max(0, post.getCommentCount() - 1));
-            postMapper.updateById(post);
-            refreshPostCacheIfNeeded(post.getId(), TargetType.POST.getCode(), null);
-        }
-
-        log.info("删除评论成功: userId={}, commentId={}", userId, commentId);
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void adminDeleteComment(Long commentId) {
+        deleteCommentInternal(commentId, getCurrentUserId(), true);
     }
 
     private void refreshPostCacheIfNeeded(Long targetId, String targetType, String action) {
@@ -216,11 +207,7 @@ public class InteractionServiceImpl implements InteractionService {
 
     @Override
     public CommentVO getComment(Long commentId) {
-        Comment comment = commentMapper.selectById(commentId);
-        if (comment == null) {
-            throw new BusinessException(ErrorCode.COMMENT_NOT_FOUND);
-        }
-        return convertToCommentVO(comment);
+        return convertToCommentVO(requireAvailableComment(commentId));
     }
 
     /**
@@ -245,19 +232,50 @@ public class InteractionServiceImpl implements InteractionService {
     /**
      * 删除评论及其所有子评论
      */
-    private void deleteCommentAndChildren(Long commentId) {
-        // 查询所有子评论
-        LambdaQueryWrapper<Comment> query = new LambdaQueryWrapper<>();
-        query.eq(Comment::getParentId, commentId);
-        List<Comment> children = commentMapper.selectList(query);
-
-        // 递归删除子评论
-        for (Comment child : children) {
-            deleteCommentAndChildren(child.getId());
+    private void deleteCommentInternal(Long commentId, Long operatorId, boolean adminOperation) {
+        Comment comment = commentMapper.selectById(commentId);
+        if (comment == null) {
+            throw new BusinessException(ErrorCode.COMMENT_NOT_FOUND);
+        }
+        if (Boolean.TRUE.equals(comment.getDeleted())) {
+            throw new BusinessException(ErrorCode.COMMENT_DELETED);
         }
 
-        // 删除当前评论
-        commentMapper.deleteById(commentId);
+        if (!adminOperation && !comment.getUserId().equals(operatorId)) {
+            throw new BusinessException(ErrorCode.COMMENT_NOT_OWNER);
+        }
+
+        int deletedCount = softDeleteCommentAndChildren(commentId);
+
+        Post post = postMapper.selectById(comment.getPostId());
+        if (post != null) {
+            post.setCommentCount(Math.max(0, post.getCommentCount() - deletedCount));
+            postMapper.updateById(post);
+            refreshPostCacheIfNeeded(post.getId(), TargetType.POST.getCode(), deletedCount > 0 ? "comment" : null);
+        }
+
+        log.info("{}删除评论成功: operatorId={}, commentId={}, deletedCount={}",
+                adminOperation ? "管理员" : "用户", operatorId, commentId, deletedCount);
+    }
+
+    private int softDeleteCommentAndChildren(Long commentId) {
+        Comment current = commentMapper.selectById(commentId);
+        if (current == null || Boolean.TRUE.equals(current.getDeleted())) {
+            return 0;
+        }
+
+        current.setDeleted(true);
+        commentMapper.updateById(current);
+        int deletedCount = 1;
+
+        LambdaQueryWrapper<Comment> query = new LambdaQueryWrapper<>();
+        query.eq(Comment::getParentId, commentId)
+                .eq(Comment::getDeleted, false);
+        List<Comment> children = commentMapper.selectList(query);
+        for (Comment child : children) {
+            deletedCount += softDeleteCommentAndChildren(child.getId());
+        }
+        return deletedCount;
     }
 
     /**
@@ -388,5 +406,30 @@ public class InteractionServiceImpl implements InteractionService {
         }
 
         throw new BusinessException(ErrorCode.TOKEN_INVALID);
+    }
+
+    private Post requirePublishedPost(Long postId) {
+        Post post = postMapper.selectById(postId);
+        if (post == null) {
+            throw new BusinessException(ErrorCode.POST_NOT_FOUND);
+        }
+        if (!PostStatus.PUBLISHED.getCode().equals(post.getStatus())) {
+            if (PostStatus.DELETED.getCode().equals(post.getStatus())) {
+                throw new BusinessException(ErrorCode.POST_DELETED);
+            }
+            throw new BusinessException(ErrorCode.NOT_FOUND, "帖子当前不可交互");
+        }
+        return post;
+    }
+
+    private Comment requireAvailableComment(Long commentId) {
+        Comment comment = commentMapper.selectById(commentId);
+        if (comment == null) {
+            throw new BusinessException(ErrorCode.COMMENT_NOT_FOUND);
+        }
+        if (Boolean.TRUE.equals(comment.getDeleted())) {
+            throw new BusinessException(ErrorCode.COMMENT_DELETED);
+        }
+        return comment;
     }
 }
