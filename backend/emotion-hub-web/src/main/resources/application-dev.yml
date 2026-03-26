@@ -73,7 +73,7 @@ jwt:
 
 # 通义千问API配置
 dashscope:
-  api-key: ${DASHSCOPE_API_KEY:}  # 从环境变量读取，或者直接填写
+  api-key: ${DASHSCOPE_API_KEY:sk-4c76aa29e3e44fa6aff8454546ba9925}  # 默认内置API Key，也可通过环境变量覆盖
 
 # 情感分析配置
 emotion:

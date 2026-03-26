@@ -68,6 +68,16 @@ public class Result<T> {
     }
 
     /**
+     * 成功返回（仅自定义消息，无数据）
+     */
+    public static <T> Result<T> success(String message) {
+        Result<T> result = new Result<>();
+        result.setCode(200);
+        result.setMessage(message);
+        return result;
+    }
+
+    /**
      * 失败返回
      */
     public static <T> Result<T> error(String message) {

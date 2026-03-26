@@ -13,6 +13,12 @@
           <span class="meta">PLAZA</span>
         </router-link>
 
+        <template v-if="userStore.isLoggedIn">
+          <router-link to="/settings/llm" class="nav-link llm-nav-link">
+            <span class="meta">LLM KEYS</span>
+          </router-link>
+        </template>
+
         <template v-if="userStore.isLoggedIn && !userStore.isAdmin">
           <router-link to="/profile" class="nav-link">
             <span class="meta">PROFILE</span>
@@ -139,6 +145,11 @@ onMounted(() => {
       background: $color-bordeaux;
     }
   }
+}
+
+.llm-nav-link {
+  font-weight: 700;
+  color: $color-bordeaux;
 }
 
 .admin-nav-link {

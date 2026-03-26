@@ -25,6 +25,9 @@
         </div>
       </div>
       <div class="admin-actions">
+        <button class="archive-button llm-action" @click="router.push('/admin/apikeys')">
+          LLM / API KEYS
+        </button>
         <button class="archive-button" @click="router.push('/admin/users')">MANAGE USERS</button>
         <button class="archive-button" @click="router.push('/admin/posts')">REVIEW POSTS</button>
         <button class="archive-button" @click="router.push('/admin/reports')">HANDLE REPORTS</button>
@@ -70,4 +73,9 @@ onMounted(() => {
 
 <style scoped lang="scss">
 @import '@/styles/admin.scss';
+
+.llm-action {
+  border: 2px solid $color-bordeaux;
+  box-shadow: 4px 4px 0 rgba($color-bordeaux, 0.35);
+}
 </style>

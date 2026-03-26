@@ -31,6 +31,12 @@ const routes: RouteRecordRaw[] = [
     component: () => import('@/views/Notifications.vue'),
     meta: { requiresAuth: true }
   },
+  {
+    path: '/settings/llm',
+    name: 'LlmApiKeys',
+    component: () => import('@/views/admin/AdminApiKeys.vue'),
+    meta: { requiresAuth: true }
+  },
   // 管理员独立登录路由
   {
     path: '/admin/login',
@@ -67,6 +73,11 @@ const routes: RouteRecordRaw[] = [
         path: 'logs',
         name: 'AdminLogs',
         component: () => import('@/views/admin/AdminLogs.vue')
+      },
+      {
+        path: 'apikeys',
+        name: 'AdminApiKeys',
+        component: () => import('@/views/admin/AdminApiKeys.vue')
       }
     ]
   }

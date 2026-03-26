@@ -10,9 +10,10 @@
             <p class="meta">@{{ userInfo?.username || 'username' }}</p>
             <p class="timestamp">MEMBER SINCE: {{ formatDate(userInfo?.createdAt || '') }}</p>
           </div>
-          <button v-if="isOwnProfile" class="archive-button-outline" @click="handleLogout">
-            LOGOUT
-          </button>
+          <div v-if="isOwnProfile" class="profile-header-actions">
+            <router-link to="/settings/llm" class="archive-button">LLM KEYS</router-link>
+            <button class="archive-button-outline" @click="handleLogout">LOGOUT</button>
+          </div>
         </div>
 
         <div class="divider"></div>
@@ -267,6 +268,19 @@ onMounted(() => {
   display: flex;
   gap: 2rem;
   align-items: flex-start;
+}
+
+.profile-header-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  align-items: stretch;
+  flex-shrink: 0;
+
+  a.archive-button {
+    text-align: center;
+    text-decoration: none;
+  }
 }
 
 .avatar-large {

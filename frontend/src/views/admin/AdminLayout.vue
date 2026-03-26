@@ -40,6 +40,7 @@ const navItems = [
   { label: 'Users', to: '/admin/users' },
   { label: 'Posts', to: '/admin/posts' },
   { label: 'Reports', to: '/admin/reports' },
+  { label: 'API Keys', to: '/admin/apikeys' },
   { label: 'Logs', to: '/admin/logs' }
 ]
 

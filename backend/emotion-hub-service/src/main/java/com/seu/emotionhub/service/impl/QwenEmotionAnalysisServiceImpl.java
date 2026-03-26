@@ -5,12 +5,12 @@ import com.alibaba.dashscope.aigc.generation.GenerationParam;
 import com.alibaba.dashscope.aigc.generation.GenerationResult;
 import com.alibaba.dashscope.common.Message;
 import com.alibaba.dashscope.common.Role;
-import com.alibaba.dashscope.exception.InputRequiredException;
-import com.alibaba.dashscope.exception.NoApiKeyException;
 import com.seu.emotionhub.dao.mapper.PostMapper;
+import com.seu.emotionhub.model.entity.ApiKeyConfig;
 import com.seu.emotionhub.model.entity.Post;
 import com.seu.emotionhub.model.enums.EmotionLabel;
 import com.seu.emotionhub.model.enums.PostStatus;
+import com.seu.emotionhub.service.ApiKeyConfigService;
 import com.seu.emotionhub.service.EmotionAnalysisService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -26,6 +26,7 @@ import java.util.regex.Pattern;
 /**
  * 通义千问情感分析服务实现
  * 使用真实的LLM API进行情感分析
+ * API Key优先级：用户个人配置 > 平台默认配置 > 配置文件
  *
  * @author EmotionHub Team
  */
@@ -36,11 +37,14 @@ import java.util.regex.Pattern;
 public class QwenEmotionAnalysisServiceImpl implements EmotionAnalysisService {
 
     private final PostMapper postMapper;
+    private final ApiKeyConfigService apiKeyConfigService;
 
     @Value("${dashscope.api-key:}")
-    private String apiKey;
+    private String fallbackApiKey;
 
-    private static final String MODEL = "qwen-plus"; // 使用qwen-plus模型
+    private static final String PROVIDER_QIANWEN = "qianwen";
+    private static final String MODEL = "qwen-plus";
+
     private static final String SYSTEM_PROMPT = """
             You are an expert in emotional analysis. Analyze the emotional tone of the given text and provide:
             1. Emotion Label: POSITIVE, NEGATIVE, or NEUTRAL
@@ -66,19 +70,17 @@ public class QwenEmotionAnalysisServiceImpl implements EmotionAnalysisService {
 
         log.info("开始分析帖子情感（通义千问）: postId={}", postId);
 
+        // 从数据库按优先级获取API Key（用户配置 > 平台默认）
+        String apiKey = resolveApiKey(post.getUserId());
+        if (apiKey == null || apiKey.isEmpty()) {
+            log.error("未找到有效API Key，降级使用关键词分析: postId={}", postId);
+            fallbackToKeywordAnalysis(post);
+            return;
+        }
+
         try {
-            // 检查API Key
-            if (apiKey == null || apiKey.isEmpty()) {
-                log.error("通义千问API Key未配置，降级使用关键词分析");
-                fallbackToKeywordAnalysis(post);
-                return;
-            }
+            InternalEmotionResult result = analyzeWithQwen(apiKey, post.getContent());
 
-            // 调用通义千问API
-            String content = post.getContent();
-            InternalEmotionResult result = analyzeWithQwen(content);
-
-            // 更新帖子
             post.setEmotionLabel(result.label);
             post.setEmotionScore(java.math.BigDecimal.valueOf(result.score));
             post.setStatus(PostStatus.PUBLISHED.name());
@@ -88,20 +90,21 @@ public class QwenEmotionAnalysisServiceImpl implements EmotionAnalysisService {
                     postId, result.label, result.score);
 
         } catch (Exception e) {
-            log.error("通义千问分析失败，降级使用关键词分析: postId=" + postId, e);
+            log.error("通义千问分析失败，降级使用关键词分析: postId={}", postId, e);
             fallbackToKeywordAnalysis(post);
         }
     }
 
     @Override
-    public EmotionAnalysisService.EmotionResult analyzeText(String content) {
-        try {
-            if (apiKey == null || apiKey.isEmpty()) {
-                return fallbackAnalyzeText(content);
-            }
+    public EmotionResult analyzeText(String content) {
+        String apiKey = resolveApiKey(null);
+        if (apiKey == null || apiKey.isEmpty()) {
+            return fallbackAnalyzeText(content);
+        }
 
-            InternalEmotionResult result = analyzeWithQwen(content);
-            return new EmotionAnalysisService.EmotionResult(
+        try {
+            InternalEmotionResult result = analyzeWithQwen(apiKey, content);
+            return new EmotionResult(
                     result.score,
                     result.label,
                     "Analyzed by Qwen AI",
@@ -114,9 +117,33 @@ public class QwenEmotionAnalysisServiceImpl implements EmotionAnalysisService {
     }
 
     /**
+     * 按优先级解析API Key：用户个人配置 > 平台默认配置 > 配置文件
+     */
+    private String resolveApiKey(Long userId) {
+        // 1. 先从数据库查（用户配置 > 平台默认）
+        try {
+            ApiKeyConfig config = apiKeyConfigService.getEffectiveApiKey(userId, PROVIDER_QIANWEN);
+            if (config != null && config.getApiKey() != null && !config.getApiKey().isEmpty()) {
+                log.debug("使用数据库配置的API Key: userId={}, provider={}", userId, PROVIDER_QIANWEN);
+                return config.getApiKey();
+            }
+        } catch (Exception e) {
+            log.warn("从数据库获取API Key失败，使用配置文件兜底: {}", e.getMessage());
+        }
+
+        // 2. 配置文件兜底
+        if (fallbackApiKey != null && !fallbackApiKey.isEmpty()) {
+            log.debug("使用配置文件中的API Key");
+            return fallbackApiKey;
+        }
+
+        return null;
+    }
+
+    /**
      * 使用通义千问进行情感分析
      */
-    private InternalEmotionResult analyzeWithQwen(String content) throws Exception {
+    private InternalEmotionResult analyzeWithQwen(String apiKey, String content) throws Exception {
         Generation gen = new Generation();
 
         Message systemMsg = Message.builder()
@@ -135,7 +162,7 @@ public class QwenEmotionAnalysisServiceImpl implements EmotionAnalysisService {
                 .messages(Arrays.asList(systemMsg, userMsg))
                 .resultFormat(GenerationParam.ResultFormat.MESSAGE)
                 .topP(0.8)
-                .temperature(0.3f) // 降低随机性，提高稳定性
+                .temperature(0.3f)
                 .build();
 
         GenerationResult result = gen.call(param);
@@ -150,7 +177,6 @@ public class QwenEmotionAnalysisServiceImpl implements EmotionAnalysisService {
     private InternalEmotionResult parseEmotionResult(String response) {
         InternalEmotionResult result = new InternalEmotionResult();
 
-        // 解析LABEL
         Pattern labelPattern = Pattern.compile("LABEL:\\s*(POSITIVE|NEGATIVE|NEUTRAL)", Pattern.CASE_INSENSITIVE);
         Matcher labelMatcher = labelPattern.matcher(response);
         if (labelMatcher.find()) {
@@ -159,12 +185,10 @@ public class QwenEmotionAnalysisServiceImpl implements EmotionAnalysisService {
             result.label = EmotionLabel.NEUTRAL.name();
         }
 
-        // 解析SCORE
         Pattern scorePattern = Pattern.compile("SCORE:\\s*(-?\\d+\\.?\\d*)");
         Matcher scoreMatcher = scorePattern.matcher(response);
         if (scoreMatcher.find()) {
             result.score = Double.parseDouble(scoreMatcher.group(1));
-            // 确保分数在[-1.0, 1.0]范围内
             result.score = Math.max(-1.0, Math.min(1.0, result.score));
         } else {
             result.score = 0.0;
@@ -222,7 +246,7 @@ public class QwenEmotionAnalysisServiceImpl implements EmotionAnalysisService {
     /**
      * 文本分析的降级方案
      */
-    private EmotionAnalysisService.EmotionResult fallbackAnalyzeText(String content) {
+    private EmotionResult fallbackAnalyzeText(String content) {
         String lowerContent = content.toLowerCase();
 
         String[] positiveWords = {"happy", "joy", "love", "excellent", "wonderful", "great", "amazing",
@@ -255,12 +279,7 @@ public class QwenEmotionAnalysisServiceImpl implements EmotionAnalysisService {
             score = 0.0;
         }
 
-        return new EmotionAnalysisService.EmotionResult(
-                score,
-                label,
-                "Analyzed by keyword matching (fallback)",
-                new String[0]
-        );
+        return new EmotionResult(score, label, "Analyzed by keyword matching (fallback)", new String[0]);
     }
 
     /**
