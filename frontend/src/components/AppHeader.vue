@@ -54,12 +54,27 @@ import { getUnreadCount } from '@/api/notification'
 const userStore = useUserStore()
 const unreadCount = ref(0)
 
+const parseUnreadCount = (payload: unknown): number => {
+  if (typeof payload === 'number') {
+    return payload
+  }
+
+  if (payload && typeof payload === 'object' && 'count' in payload) {
+    const count = (payload as { count?: unknown }).count
+    if (typeof count === 'number') {
+      return count
+    }
+  }
+
+  return 0
+}
+
 const loadUnreadCount = async () => {
   if (!userStore.isLoggedIn) return
 
   try {
     const res = await getUnreadCount()
-    unreadCount.value = res.data
+    unreadCount.value = parseUnreadCount(res.data)
   } catch (error) {
     console.error('Failed to load unread count:', error)
   }
