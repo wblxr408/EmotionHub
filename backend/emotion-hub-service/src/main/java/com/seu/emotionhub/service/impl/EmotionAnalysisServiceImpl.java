@@ -12,7 +12,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.Random;
@@ -49,7 +48,6 @@ public class EmotionAnalysisServiceImpl implements EmotionAnalysisService {
 
     @Override
     @Async("taskExecutor")
-    @Transactional(rollbackFor = Exception.class)
     public void analyzePostAsync(Long postId) {
         try {
             log.info("开始异步分析帖子情感: postId={}", postId);

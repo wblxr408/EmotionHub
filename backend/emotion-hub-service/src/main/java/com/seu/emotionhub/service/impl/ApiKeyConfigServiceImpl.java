@@ -80,7 +80,7 @@ public class ApiKeyConfigServiceImpl implements ApiKeyConfigService {
         if (!StringUtils.hasText(apiKey)) {
             throw new BusinessException(ErrorCode.PARAM_ERROR, "API Key不能为空");
         }
-        if (!LLMProvider.fromCode(provider).getCode().equals(provider)) {
+        if (!StringUtils.hasText(provider) || LLMProvider.fromCode(provider) == null) {
             throw new BusinessException(ErrorCode.PARAM_ERROR, "不支持的LLM提供商: " + provider);
         }
 
@@ -130,8 +130,7 @@ public class ApiKeyConfigServiceImpl implements ApiKeyConfigService {
 
     @Override
     public boolean validateApiKey(String provider, String apiKey) {
-        // 简单的非空校验 + 长度校验，实际生产环境可调用对应平台验证接口
-        if (!StringUtils.hasText(apiKey) || apiKey.length() < 8) {
+        if (!StringUtils.hasText(provider) || !StringUtils.hasText(apiKey) || apiKey.length() < 8) {
             return false;
         }
 

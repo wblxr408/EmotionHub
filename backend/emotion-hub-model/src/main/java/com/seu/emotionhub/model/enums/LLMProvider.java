@@ -41,6 +41,6 @@ public enum LLMProvider {
                 return provider;
             }
         }
-        return OPENAI;
+        return null;
     }
 }

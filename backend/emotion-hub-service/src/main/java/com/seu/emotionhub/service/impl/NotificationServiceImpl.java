@@ -18,7 +18,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
 import java.util.stream.Collectors;
 
 /**
@@ -35,7 +34,6 @@ public class NotificationServiceImpl implements NotificationService {
 
     @Override
     @Async("taskExecutor")
-    @Transactional(rollbackFor = Exception.class)
     public void createNotification(Long userId, String type, String title, String content, Long relatedId) {
         try {
             Notification notification = new Notification();
@@ -117,18 +115,14 @@ public class NotificationServiceImpl implements NotificationService {
     public void markAllAsRead() {
         Long userId = getCurrentUserId();
 
+        Notification notification = new Notification();
+        notification.setIsRead(1);
         LambdaQueryWrapper<Notification> query = new LambdaQueryWrapper<>();
         query.eq(Notification::getUserId, userId)
                 .eq(Notification::getIsRead, 0);
+        notificationMapper.update(notification, query);
 
-        List<Notification> notifications = notificationMapper.selectList(query);
-
-        for (Notification notification : notifications) {
-            notification.setIsRead(1);
-            notificationMapper.updateById(notification);
-        }
-
-        log.info("标记所有通知已读: userId={}, count={}", userId, notifications.size());
+        log.info("标记所有通知已读: userId={}", userId);
     }
 
     @Override

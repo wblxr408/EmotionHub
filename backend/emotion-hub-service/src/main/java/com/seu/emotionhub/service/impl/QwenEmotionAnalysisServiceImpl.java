@@ -167,7 +167,7 @@ public class QwenEmotionAnalysisServiceImpl implements EmotionAnalysisService {
 
             post.setEmotionLabel(result.label);
             post.setEmotionScore(java.math.BigDecimal.valueOf(result.score));
-            post.setStatus(PostStatus.PUBLISHED.name());
+            post.setStatus(PostStatus.PUBLISHED.getCode());
             postMapper.updateById(post);
             invalidateStatsCache(post.getUserId());
 
@@ -182,6 +182,11 @@ public class QwenEmotionAnalysisServiceImpl implements EmotionAnalysisService {
 
     @Override
     public EmotionResult analyzeText(String content) {
+        if (content == null || content.trim().isEmpty()) {
+            return new EmotionResult(0.0, EmotionLabel.NEUTRAL.getCode(),
+                    "内容为空，无法分析", new String[0]);
+        }
+
         String apiKey = resolveApiKey(null);
         if (apiKey == null || apiKey.isEmpty()) {
             return fallbackAnalyzeText(content);
@@ -267,7 +272,7 @@ public class QwenEmotionAnalysisServiceImpl implements EmotionAnalysisService {
         if (labelMatcher.find()) {
             result.label = labelMatcher.group(1).toUpperCase();
         } else {
-            result.label = EmotionLabel.NEUTRAL.name();
+            result.label = EmotionLabel.NEUTRAL.getCode();
         }
 
         Pattern scorePattern = Pattern.compile("SCORE:\\s*(-?\\d+\\.?\\d*)");
@@ -298,11 +303,11 @@ public class QwenEmotionAnalysisServiceImpl implements EmotionAnalysisService {
         boolean hasStrongNegativeCue = containsAny(content,
                 "垃圾", "恶心", "绝望", "崩溃", "讨厌", "气死", "痛苦", "抑郁", "恨", "烦死");
 
-        if (EmotionLabel.NEGATIVE.name().equals(rawResult.label)
+        if (EmotionLabel.NEGATIVE.getCode().equals(rawResult.label)
                 && rawResult.score > -0.75
                 && (hasHumorCue || hasTeasingCue)
                 && !hasStrongNegativeCue) {
-            rawResult.label = EmotionLabel.NEUTRAL.name();
+            rawResult.label = EmotionLabel.NEUTRAL.getCode();
             rawResult.score = Math.max(-0.1, rawResult.score + 0.45);
             log.info("检测到调侃/幽默语气，已将结果从偏负向校正为中性: score={}", rawResult.score);
         }
@@ -347,19 +352,19 @@ public class QwenEmotionAnalysisServiceImpl implements EmotionAnalysisService {
         double score;
 
         if (positiveCount > negativeCount) {
-            label = EmotionLabel.POSITIVE.name();
+            label = EmotionLabel.POSITIVE.getCode();
             score = Math.min(0.9, 0.5 + positiveCount * 0.1);
         } else if (negativeCount > positiveCount) {
-            label = EmotionLabel.NEGATIVE.name();
+            label = EmotionLabel.NEGATIVE.getCode();
             score = Math.max(-0.9, -0.5 - negativeCount * 0.1);
         } else {
-            label = EmotionLabel.NEUTRAL.name();
+            label = EmotionLabel.NEUTRAL.getCode();
             score = 0.0;
         }
 
         post.setEmotionLabel(label);
         post.setEmotionScore(java.math.BigDecimal.valueOf(score));
-        post.setStatus(PostStatus.PUBLISHED.name());
+        post.setStatus(PostStatus.PUBLISHED.getCode());
         postMapper.updateById(post);
         invalidateStatsCache(post.getUserId());
 
@@ -371,6 +376,11 @@ public class QwenEmotionAnalysisServiceImpl implements EmotionAnalysisService {
      * 文本分析的降级方案
      */
     private EmotionResult fallbackAnalyzeText(String content) {
+        if (content == null || content.trim().isEmpty()) {
+            return new EmotionResult(0.0, EmotionLabel.NEUTRAL.getCode(),
+                    "内容为空，无法分析", new String[0]);
+        }
+
         String lowerContent = content.toLowerCase();
 
         String[] positiveWords = { "happy", "joy", "love", "excellent", "wonderful", "great", "amazing",
@@ -395,13 +405,13 @@ public class QwenEmotionAnalysisServiceImpl implements EmotionAnalysisService {
         double score;
 
         if (positiveCount > negativeCount) {
-            label = EmotionLabel.POSITIVE.name();
+            label = EmotionLabel.POSITIVE.getCode();
             score = Math.min(0.9, 0.5 + positiveCount * 0.1);
         } else if (negativeCount > positiveCount) {
-            label = EmotionLabel.NEGATIVE.name();
+            label = EmotionLabel.NEGATIVE.getCode();
             score = Math.max(-0.9, -0.5 - negativeCount * 0.1);
         } else {
-            label = EmotionLabel.NEUTRAL.name();
+            label = EmotionLabel.NEUTRAL.getCode();
             score = 0.0;
         }
 
@@ -412,7 +422,7 @@ public class QwenEmotionAnalysisServiceImpl implements EmotionAnalysisService {
      * 情感分析结果内部类
      */
     private static class InternalEmotionResult {
-        String label = EmotionLabel.NEUTRAL.name();
+        String label = EmotionLabel.NEUTRAL.getCode();
         Double score = 0.0;
     }
 
