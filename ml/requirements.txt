@@ -1,0 +1,9 @@
+lightgbm==4.3.0
+flask==3.0.3
+pymysql==1.1.1
+pandas==2.2.2
+numpy==1.26.4
+scikit-learn==1.4.2
+sqlalchemy==2.0.30
+python-dotenv==1.0.1
+gunicorn==22.0.0

@@ -4,19 +4,25 @@ import com.alibaba.fastjson2.JSON;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.seu.emotionhub.dao.mapper.PostMapper;
 import com.seu.emotionhub.dao.mapper.RecommendationLogMapper;
+import com.seu.emotionhub.dao.mapper.UserInfluenceScoreMapper;
 import com.seu.emotionhub.dao.mapper.UserMapper;
+import com.seu.emotionhub.model.dto.response.EmotionStatsDTO;
 import com.seu.emotionhub.model.dto.response.FeedResponse;
 import com.seu.emotionhub.model.dto.response.PostVO;
 import com.seu.emotionhub.model.entity.ContentEmotionTag;
 import com.seu.emotionhub.model.entity.Post;
 import com.seu.emotionhub.model.entity.RecommendationLog;
 import com.seu.emotionhub.model.entity.User;
+import com.seu.emotionhub.model.entity.UserInfluenceScore;
 import com.seu.emotionhub.model.enums.EmotionStateEnum;
 import com.seu.emotionhub.model.enums.PostStatus;
 import com.seu.emotionhub.service.ABTestService;
 import com.seu.emotionhub.service.ContentEmotionTagService;
 import com.seu.emotionhub.service.FeedService;
+import com.seu.emotionhub.service.RankerService;
 import com.seu.emotionhub.service.UserEmotionService;
+import com.seu.emotionhub.service.config.RankerProperties;
+
 import com.seu.emotionhub.service.cache.FeedRedisKeyConstants;
 import com.seu.emotionhub.service.cache.HotPostCacheService;
 import com.seu.emotionhub.service.cache.RecommendationRedisKeyConstants;
@@ -55,10 +61,13 @@ public class FeedServiceImpl implements FeedService {
     private final PostMapper postMapper;
     private final UserMapper userMapper;
     private final RecommendationLogMapper recommendationLogMapper;
+    private final UserInfluenceScoreMapper userInfluenceScoreMapper;
     private final UserEmotionService userEmotionService;
     private final ContentEmotionTagService contentEmotionTagService;
     private final HotPostCacheService hotPostCacheService;
     private final ABTestService abTestService;
+    private final RankerService rankerService;
+    private final RankerProperties rankerProperties;
     private final RedisTemplate<String, Object> redisTemplate;
 
     private static final int DEFAULT_SIZE = 20;
@@ -84,6 +93,13 @@ public class FeedServiceImpl implements FeedService {
         }
 
         EmotionStateEnum state = userEmotionService.matchEmotionState(userId);
+
+        // 一次性获取用户情感上下文（2.1 产物），排序和日志均复用
+        EmotionStatsDTO stats = userEmotionService.calculateSlidingWindowStats(userId, "24h");
+        Double userAvgScore = stats != null ? stats.getAvgScore() : null;
+        Double userVolatility = stats != null ? stats.getVolatility() : null;
+        String trendType = userEmotionService.judgeEmotionTrend(userId, "24h");
+
         List<FeedCandidate> candidates = loadCandidates(userId);
         Map<Long, ContentEmotionTag> tagMap = contentEmotionTagService.getTagsByPostIds(
                 candidates.stream().map(c -> c.post.getId()).collect(Collectors.toSet())
@@ -91,7 +107,19 @@ public class FeedServiceImpl implements FeedService {
 
         // 根据策略选择排序逻辑
         if ("emotional_adaptive".equals(resolvedStrategy)) {
-            scoreEmotional(candidates, tagMap, state);
+            boolean mlUsed = false;
+            if (rankerProperties.isEnabled()) {
+                try {
+                    scoreWithModel(candidates, tagMap, state, userAvgScore, userVolatility, trendType);
+                    mlUsed = true;
+                    log.info("ML ranker used: userId={}, candidates={}", userId, candidates.size()); // 加这行
+                } catch (Exception e) {
+                    log.warn("ML ranker failed, falling back to rule-based scoring: {}", e.getMessage());
+                }
+            }
+            if (!mlUsed) {
+                scoreEmotional(candidates, tagMap, state);
+            }
         } else {
             scoreTraditional(candidates);
         }
@@ -116,7 +144,8 @@ public class FeedServiceImpl implements FeedService {
         }
 
         // 异步写推荐日志，不阻塞响应
-        asyncWriteLog(userId, resolvedStrategy, state.getName(), paged);
+        asyncWriteLog(userId, resolvedStrategy, state.getName(),
+                userAvgScore, userVolatility, trendType, paged);
 
         return response;
     }
@@ -195,6 +224,68 @@ public class FeedServiceImpl implements FeedService {
     // -------------------------------------------------------
     // 排序模型
     // -------------------------------------------------------
+
+    /**
+     * ML 模型排序（调用 Python 预测服务）
+     * 失败时由调用方捕获异常并降级到 scoreEmotional
+     */
+    private void scoreWithModel(List<FeedCandidate> candidates,
+                                 Map<Long, ContentEmotionTag> tagMap,
+                                 EmotionStateEnum state,
+                                 Double userAvgScore,
+                                 Double userVolatility,
+                                 String trendType) {
+        // 2.3：作者影响力特征（批量查最新一条）
+        Set<Long> authorIds = candidates.stream()
+                .map(c -> c.post.getUserId())
+                .collect(Collectors.toSet());
+        Map<Long, Double> authorInfluenceScores = loadAuthorInfluenceScores(authorIds);
+
+        // 把影响力写回候选对象，供日志记录使用
+        for (FeedCandidate c : candidates) {
+            c.authorInfluence = authorInfluenceScores.getOrDefault(c.post.getUserId(), 0.5);
+        }
+
+        List<Post> posts = candidates.stream().map(c -> c.post).collect(Collectors.toList());
+        Map<Long, Double> baseScores = candidates.stream()
+                .collect(Collectors.toMap(c -> c.post.getId(), c -> c.baseScore));
+
+        List<Double> scores = rankerService.predict(
+                posts, tagMap, state, baseScores,
+                userAvgScore, userVolatility, trendType, authorInfluenceScores);
+
+        for (int i = 0; i < candidates.size(); i++) {
+            candidates.get(i).finalScore = scores.get(i);
+        }
+    }
+
+    /**
+     * 批量加载作者影响力分并归一化到 0~1
+     */
+    private Map<Long, Double> loadAuthorInfluenceScores(Set<Long> authorIds) {
+        Map<Long, Double> result = new HashMap<>();
+        if (authorIds.isEmpty()) return result;
+
+        List<UserInfluenceScore> records = userInfluenceScoreMapper.selectList(
+                new LambdaQueryWrapper<UserInfluenceScore>()
+                        .in(UserInfluenceScore::getUserId, authorIds)
+                        .orderByDesc(UserInfluenceScore::getCalculationDate)
+        );
+        // 每个用户只取最新一条
+        Map<Long, Double> raw = new LinkedHashMap<>();
+        for (UserInfluenceScore r : records) {
+            raw.putIfAbsent(r.getUserId(),
+                    r.getInfluenceScore() != null ? r.getInfluenceScore().doubleValue() : 0.0);
+        }
+        if (raw.isEmpty()) return result;
+
+        double maxScore = raw.values().stream().mapToDouble(v -> v).max().orElse(1.0);
+        if (maxScore < 1e-6) maxScore = 1.0;
+        for (Map.Entry<Long, Double> e : raw.entrySet()) {
+            result.put(e.getKey(), e.getValue() / maxScore);
+        }
+        return result;
+    }
 
     /**
      * 情感自适应排序
@@ -331,28 +422,30 @@ public class FeedServiceImpl implements FeedService {
     // -------------------------------------------------------
 
     @Async
-    void asyncWriteLog(Long userId, String strategy, String emotionState, List<FeedCandidate> paged) {
+    void asyncWriteLog(Long userId, String strategy, String emotionState,
+                       Double userAvgScore, Double userVolatility, String trendType,
+                       List<FeedCandidate> paged) {
         LocalDateTime now = LocalDateTime.now();
-        List<RecommendationLog> logs = new ArrayList<>();
         for (int i = 0; i < paged.size(); i++) {
             FeedCandidate c = paged.get(i);
-            RecommendationLog log = new RecommendationLog();
-            log.setUserId(userId);
-            log.setPostId(c.post.getId());
-            log.setStrategy(strategy);
-            log.setEmotionState(emotionState);
-            log.setScore(c.finalScore);
-            log.setPosition(i + 1);
-            log.setImpressedAt(now);
-            log.setClicked(false);
-            logs.add(log);
-        }
-        // MyBatis-Plus 逐条插入（数量少，不需要批量）
-        for (RecommendationLog record : logs) {
+            RecommendationLog record = new RecommendationLog();
+            record.setUserId(userId);
+            record.setPostId(c.post.getId());
+            record.setStrategy(strategy);
+            record.setEmotionState(emotionState);
+            record.setScore(c.finalScore);
+            record.setPosition(i + 1);
+            record.setImpressedAt(now);
+            record.setClicked(false);
+            // 曝光时的用户情感上下文快照（来自 2.1 + 2.3）
+            record.setUserAvgScore(userAvgScore);
+            record.setUserVolatility(userVolatility);
+            record.setTrendType(trendType);
+            record.setAuthorInfluence(c.authorInfluence);
             try {
                 recommendationLogMapper.insert(record);
             } catch (Exception ex) {
-                log.warn("推荐日志写入失败: userId={}, postId={}", userId, record.getPostId(), ex);
+                log.warn("推荐日志写入失败: userId={}, postId={}", userId, c.post.getId(), ex);
             }
         }
     }
@@ -396,6 +489,7 @@ public class FeedServiceImpl implements FeedService {
         final Post post;
         final double baseScore;
         double finalScore;
+        double authorInfluence = 0.5;  // 作者影响力，供日志记录使用
 
         FeedCandidate(Post post, double baseScore) {
             this.post = post;

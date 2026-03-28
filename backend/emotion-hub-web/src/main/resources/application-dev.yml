@@ -7,6 +7,7 @@ spring:
   flyway:
     enabled: true
     baseline-on-migrate: true
+    validate-on-migrate: false
   # 数据源配置
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
@@ -132,6 +133,13 @@ logging:
     name: logs/emotion-hub.log
     max-size: 10MB
     max-history: 30
+
+# ML 排序服务配置
+# 训练完模型、启动 Docker 服务后，将 enabled 改为 true
+ranker:
+  url: http://localhost:5000
+  timeout-ms: 500
+  enabled: true
 
 # 服务器配置
 server:

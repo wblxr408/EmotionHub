@@ -40,4 +40,16 @@ public class RecommendationLog {
 
     /** 点击时间 */
     private LocalDateTime clickedAt;
+
+    /** 曝光时用户24h平均情感分（来自2.1滑动窗口统计） */
+    private Double userAvgScore;
+
+    /** 曝光时用户情感波动性（来自2.1） */
+    private Double userVolatility;
+
+    /** 曝光时情感趋势：RISING / FALLING / STABLE（来自2.1） */
+    private String trendType;
+
+    /** 作者归一化影响力分（来自2.3 PageRank变体） */
+    private Double authorInfluence;
 }
