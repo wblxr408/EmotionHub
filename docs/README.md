@@ -84,7 +84,17 @@ cd D:\EmotionHub
 docker compose down -v
 docker compose up -d --build
 ```
-
+## LightGBM Ranker模型部署与加载
+```powershell
+cd ml
+docker-compose up -d ranker-serving
+```
+注：数据积累后切换真实数据重训练
+```powershell
+python data_export.py
+python train.py --source real
+curl -X POST http://localhost:5000/reload #热加载新模型，无需重启
+```
 ## 测试账号
 
 所有测试账号密码都是：`password123`
