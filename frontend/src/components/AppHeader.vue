@@ -20,6 +20,10 @@
         </template>
 
         <template v-if="userStore.isLoggedIn && !userStore.isAdmin">
+          <router-link to="/feed" class="nav-link">
+            <span class="meta">MY FEED</span>
+          </router-link>
+
           <router-link to="/profile" class="nav-link">
             <span class="meta">PROFILE</span>
           </router-link>
